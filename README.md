@@ -1,7 +1,7 @@
 
 # Embedded Projects
 
-Hi tinker this is a repo for my ESP32 Projects
+Hi tinker this is a repo for my Projects
 
 
 
