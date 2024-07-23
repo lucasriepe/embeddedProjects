@@ -1,2 +1,12 @@
-# esp32
-a repo for the esp32 and its addons
+
+# ESP32 Projects
+
+Hi tinker this is a repo for my ESP32 Projects
+
+
+
+
+## Tech Stack
+
+**Client:** ESPRESSIF IDF, Arduino IDE
+
