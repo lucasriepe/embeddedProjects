@@ -36,7 +36,7 @@ void funcBTNGreen1(lv_event_t *e){
 void sliderBlue(lv_event_t *e){
 	char * sliderBlueValue = lv_label_get_text(uic_labelSliderBlue);
 	
-	printf("sliderBlue,%s", sliderBlueValue);
+	printf("sliderBlue, %s \n", sliderBlueValue);
 }
 
 //--------------------------------------------------------
