@@ -8,7 +8,7 @@ Hi tinker this is a repo for my Projects
 
 ## Tech Stack
 
-**Client:** ESPRESSIF IDF, Arduino IDE
+**Client:** ESPRESSIF IDE, Arduino IDE
 
-**language:** C++, Phthon
+**language:** C, C++, Phthon
 
