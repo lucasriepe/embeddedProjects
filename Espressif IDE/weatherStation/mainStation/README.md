@@ -1,79 +1,243 @@
-| Supported Targets | ESP32-S3 |
-| ----------------- | -------- |
+# ESP32-S3 Weather Station
 
-| Supported LCD Controller    | ST7701 |
-| ----------------------------| -------|
+A modern weather station implementation using ESP32-S3 with LVGL GUI, WiFi connectivity, and time synchronization.
 
-| Supported Touch Controller  |  GT911 |
-| ----------------------------| -------|
+## Features
 
-# RGB Avoid Tearing Example
+- **Modern GUI**: Clean interface with green header bar and time display
+- **WiFi Connectivity**: Automatic connection with reconnection logic
+- **Time Display**: German time (CET/CEST) with automatic daylight saving time
+- **Secure Configuration**: WiFi credentials stored in `.env` file (not committed to git)
+- **Custom Hostname**: Device appears as "ESPmainStation" on the network
 
-[esp_lcd](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/peripherals/lcd.html) provides several panel drivers out-of box, e.g. ST7789, SSD1306, NT35510. However, there're a lot of other panels on the market, it's beyond `esp_lcd` component's responsibility to include them all.
+## Hardware Requirements
 
-`esp_lcd` allows user to add their own panel drivers in the project scope (i.e. panel driver can live outside of esp-idf), so that the upper layer code like LVGL porting code can be reused without any modifications, as long as user-implemented panel driver follows the interface defined in the `esp_lcd` component.
+- ESP32-S3 development board
+- Compatible LCD display with touch support
+- Waveshare RGB LCD (as configured in this project)
 
-This example demonstrates how to avoid tearing when using LVGL with RGB interface screens in an esp-idf project. The example will use the LVGL library to draw a stylish music player.
+## Software Requirements
 
-This example uses the [esp_timer](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/system/esp_timer.html) to generate the ticks needed by LVGL and uses a dedicated task to run the `lv_timer_handler()`. Since the LVGL APIs are not thread-safe, this example uses a mutex which be invoked before the call of `lv_timer_handler()` and released after it. The same mutex needs to be used in other tasks and threads around every LVGL (lv_...) related function call and code. For more porting guides, please refer to [LVGL porting doc](https://docs.lvgl.io/master/porting/index.html).
+- ESP-IDF (Espressif IoT Development Framework)
+- Python 3.x
+- Git
 
-## How to use the example
+## Project Setup
 
-## ESP-IDF Required
+### 1. Clone the Repository
 
-### Hardware Required
-
-* An ESP32-S3R8 development board
-* A ST7701 LCD panel, with RGB interface
-* An USB cable for power supply and programming
-
-### Hardware Connection
-
-The connection between ESP Board and the LCD is as follows:
-
-```
-       ESP Board                           RGB  Panel
-+-----------------------+              +-------------------+
-|                   GND +--------------+GND                |
-|                       |              |                   |
-|                   3V3 +--------------+VCC                |
-|                       |              |                   |
-|                   PCLK+--------------+PCLK               |
-|                       |              |                   |
-|             DATA[15:0]+--------------+DATA[15:0]         |
-|                       |              |                   |
-|                  HSYNC+--------------+HSYNC              |
-|                       |              |                   |
-|                  VSYNC+--------------+VSYNC              |
-|                       |              |                   |
-|                     DE+--------------+DE                 |
-|                       |              |                   |
-|               BK_LIGHT+--------------+BLK                |
-+-----------------------+              |                   |
-                               3V3-----+DISP_EN            |
-                                       |                   |
-                                       +-------------------+
+```bash
+git clone https://github.com/lucasriepe/embeddedProjects/tree/6ea664f73fad7934fd76d3475e34dc2169799aa6/Espressif%20IDE/weatherStation/mainStation
+cd weatherStation/mainStation
 ```
 
-* The LCD parameters and GPIO number used by this example can be changed in [example_rgb_avoid_tearing.c](main/example_rgb_avoid_tearing.c). Especially, please pay attention to the **vendor specific initialization**, it can be different between manufacturers and should consult the LCD supplier for initialization sequence code.
-* The LVGL parameters can be changed not only through `menuconfig` but also directly in `lvgl_conf.h`
+### 2. Install ESP-IDF
 
-### Configure the Project
+Follow the [ESP-IDF Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/get-started/index.html) to install ESP-IDF for your operating system.
 
-Run `idf.py menuconfig` and navigate to `Example Configuration` menu.
+### 3. Configure WiFi Credentials
 
-### Build and Flash
+1. Copy the example environment file:
 
-Run `idf.py set-target esp32s3` to select the target chip.
+   ```bash
+   cp .env.example .env
+   ```
 
-Run `idf.py -p PORT build flash monitor` to build, flash and monitor the project. A fancy animation will show up on the LCD as expected.
+2. Edit the `.env` file with your WiFi credentials and timezone:
 
-The first time you run `idf.py` for the example will cost extra time as the build system needs to address the component dependencies and downloads the missing components from registry into `managed_components` folder.
+   ```
+   # WiFi Configuration
+   WIFI_SSID=YourWiFiNetworkName
+   WIFI_PASSWORD=YourWiFiPassword
+   
+   # Timezone Configuration
+   # Format: TZ environment variable format
+   # Examples:
+   # Europe/Berlin (Germany): CET-1CEST,M3.5.0,M10.5.0/3
+   # America/New_York (USA East): EST5EDT,M3.2.0,M11.1.0
+   # America/Los_Angeles (USA West): PST8PDT,M3.2.0,M11.1.0
+   # Asia/Tokyo (Japan): JST-9
+   # UTC: UTC0
+   TIMEZONE=CET-1CEST,M3.5.0,M10.5.0/3
+   ```
 
-(To exit the serial monitor, type ``Ctrl-]``.)
+3. Generate the WiFi configuration header:
+   ```bash
+   python3 generate_wifi_config.py
+   ```
 
-See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html) for full steps to configure and use ESP-IDF to build projects.
+   This will create `main/wifi_config.h` with your WiFi credentials and timezone settings.
+
+### 4. Build the Project
+
+1. Set up the ESP-IDF environment:
+
+   ```bash
+   . $HOME/esp/esp-idf/export.sh
+   ```
+
+2. Configure the project (if needed):
+
+   ```bash
+   idf.py menuconfig
+   ```
+
+3. Build the project:
+   ```bash
+   idf.py build
+   ```
+
+### 5. Flash and Monitor
+
+1. Connect your ESP32-S3 board via USB
+
+2. Flash the firmware:
+
+   ```bash
+   idf.py flash
+   ```
+
+3. Monitor the output:
+
+   ```bash
+   idf.py monitor
+   ```
+
+   Press `Ctrl+]` to exit the monitor.
+
+## Project Structure
+
+```
+mainStation/
+├── .env                    # WiFi credentials (not in git)
+├── .env.example           # Example environment file
+├── .gitignore             # Git ignore rules
+├── CMakeLists.txt         # Main CMake configuration
+├── README.md              # This file
+├── components/            # External components
+│   ├── espressif__esp_lcd_touch/
+│   ├── espressif__esp_lcd_touch_gt911/
+│   └── lvgl__lvgl/
+├── generate_wifi_config.py # Script to generate WiFi config
+├── main/                  # Main application code
+│   ├── CMakeLists.txt
+│   ├── main.c             # Application entry point
+│   ├── weather_station_ui.c # Main UI and WiFi logic
+│   ├── wifi_config.h      # Generated WiFi configuration
+│   ├── lvgl_port.c        # LVGL porting layer
+│   └── waveshare_rgb_lcd_port.c # LCD driver
+├── partitions.csv         # Custom partition table
+├── sdkconfig              # ESP-IDF configuration
+└── sdkconfig.defaults     # Default configuration
+```
+
+## Configuration
+
+### WiFi Configuration
+
+The project uses a secure configuration system:
+
+1. WiFi credentials are stored in `.env` file (excluded from git)
+2. Run `python3 generate_wifi_config.py` to generate `main/wifi_config.h`
+3. The generated header file contains the WiFi credentials for compilation
+
+### Time Configuration
+
+The device supports configurable timezones through the `TIMEZONE` variable in the `.env` file. The timezone format follows the POSIX TZ environment variable format.
+
+#### Common Timezone Examples:
+- **Germany (CET/CEST)**: `CET-1CEST,M3.5.0,M10.5.0/3`
+- **USA East Coast (EST/EDT)**: `EST5EDT,M3.2.0,M11.1.0`
+- **USA West Coast (PST/PDT)**: `PST8PDT,M3.2.0,M11.1.0`
+- **Japan (JST)**: `JST-9`
+- **UTC**: `UTC0`
+- **UK (GMT/BST)**: `GMT0BST,M3.5.0,M10.5.0/3`
+- **Australia Sydney (AEST/AEDT)**: `AEST-10AEDT,M10.1.0,M4.1.0/3`
+
+#### Timezone Format Explanation:
+The format is: `STD[offset]DST[offset],start[/time],end[/time]`
+- **STD**: Standard time zone abbreviation
+- **offset**: Hours offset from UTC (negative for east of UTC)
+- **DST**: Daylight saving time abbreviation (optional)
+- **start**: When DST starts (M = month, week, day)
+- **end**: When DST ends
+
+Example: `CET-1CEST,M3.5.0,M10.5.0/3`
+- CET: Central European Time
+- -1: 1 hour ahead of UTC
+- CEST: Central European Summer Time
+- M3.5.0: DST starts on the last (5th) Sunday (0) of March (3)
+- M10.5.0/3: DST ends on the last Sunday of October at 3 AM
+
+- **NTP Servers**: `pool.ntp.org` and `de.pool.ntp.org`
+- **Display Format**: HH:MM (24-hour format without seconds)
+
+### Display Configuration
+
+- **Background**: Light gray (#F5F5F5)
+- **Header Bar**: Green (#4CAF50) with "Weatherstation" title
+- **Time Display**: Black text in top-right corner
+- **Font**: Montserrat (18pt for time, 20pt for title)
 
 ## Troubleshooting
 
-For any technical queries, please open an [issue](https://github.com/espressif/esp-iot-solution/issues) on GitHub. We will get back to you soon.
+### Build Issues
+
+1. **Partition too small error**: The project includes a custom partition table with 2MB app partition
+2. **Missing components**: Run `idf.py reconfigure` to download missing components
+3. **SNTP errors**: Ensure you're using the correct ESP-IDF version (v5.x recommended)
+
+### WiFi Issues
+
+1. **Connection failed**: Check WiFi credentials in `.env` file
+2. **Hostname not visible**: Some routers may take time to update device names
+3. **Time not syncing**: Ensure internet connectivity and check NTP server accessibility
+
+### Display Issues
+
+1. **Blank screen**: Check LCD connections and power supply
+2. **Touch not working**: Verify touch controller configuration
+3. **Wrong colors**: Check RGB LCD pin configuration
+
+## Development
+
+### Adding New Features
+
+1. **Weather Data**: Extend the UI to display weather information from APIs
+2. **Sensors**: Add temperature, humidity, or pressure sensors
+3. **Data Logging**: Implement data storage and historical views
+4. **Web Interface**: Add a web server for remote monitoring
+
+### Code Style
+
+- Use English for all comments and documentation
+- Follow ESP-IDF coding conventions
+- Keep functions modular and well-documented
+- Use meaningful variable and function names
+
+## Security Notes
+
+- Never commit `.env` file to version control
+- Use strong WiFi passwords
+- Consider implementing OTA updates for production use
+- Validate all external data inputs
+
+## License
+
+This project is licensed under the Apache License 2.0. See the source files for detailed license information.
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes with appropriate tests
+4. Submit a pull request with a clear description
+
+## Support
+
+For issues and questions:
+
+1. Check the troubleshooting section above
+2. Review ESP-IDF documentation
+3. Check LVGL documentation for UI-related issues
+4. Create an issue in the repository with detailed information
