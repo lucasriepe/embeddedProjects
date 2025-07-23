@@ -18,8 +18,8 @@ void app_main()
         // lv_demo_stress();
         // lv_demo_benchmark();
         // lv_demo_music();
-        lv_demo_widgets();
-        // example_lvgl_demo_ui();
+        //lv_demo_widgets();
+        example_lvgl_demo_ui();
         // Release the mutex
         lvgl_port_unlock();
     }
