@@ -106,7 +106,7 @@ esp_err_t dht22_init(void)
     
     esp_err_t ret = gpio_config(&io_conf);
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to configure GPIO: %s", esp_err_to_name(ret));
+        ESP_LOGE(TAG, "Failed to configure GPIO: error code %d", ret);
         return ret;
     }
     

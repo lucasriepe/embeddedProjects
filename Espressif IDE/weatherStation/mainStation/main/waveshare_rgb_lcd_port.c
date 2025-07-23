@@ -70,6 +70,8 @@ void waveshare_esp32_s3_touch_reset()
 
 #endif
 
+static const char *TAG = "waveshare_rgb_lcd";
+
 // Initialize RGB LCD
 esp_err_t waveshare_esp32_s3_rgb_lcd_init()
 {

@@ -65,8 +65,6 @@
 #define EXAMPLE_PIN_NUM_TOUCH_RST       (-1)            // -1 if not used
 #define EXAMPLE_PIN_NUM_TOUCH_INT       (-1)            // -1 if not used
 
-static const char *TAG = "example";
-
 bool example_lvgl_lock(int timeout_ms);
 void example_lvgl_unlock(void);
 

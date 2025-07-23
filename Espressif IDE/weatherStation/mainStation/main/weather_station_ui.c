@@ -5,6 +5,7 @@
  */
 
 #include "weather_station_ui.h"
+#include "esp_now_comm.h"
 #include "lvgl.h"
 #include "esp_log.h"
 #include "esp_wifi.h"
@@ -29,12 +30,18 @@ static bool wifi_connected = false;
 static lv_obj_t *outside_box;
 static lv_obj_t *outside_temp_label;
 static lv_obj_t *outside_humidity_label;
+static lv_obj_t *outside_status_label;  // Status indicator for remote sensor
 static lv_obj_t *inside_box;
 static lv_obj_t *inside_temp_label;
 static lv_obj_t *inside_humidity_label;
 
 // DHT22 sensor data
 static dht22_data_t current_sensor_data = {0};
+
+// ESP-NOW remote sensor data
+static esp_now_sensor_data_t remote_sensor_data = {0};
+static bool remote_sensor_active = false;
+static uint32_t last_remote_data_time = 0;
 
 // Function declarations
 static void wifi_init(void);
@@ -43,6 +50,8 @@ static void create_time_display(void);
 static void create_weather_boxes(void);
 static void update_time_display(lv_timer_t *timer);
 static void update_sensor_display(lv_timer_t *timer);
+static void esp_now_data_received_cb(const esp_now_sensor_data_t *data, const uint8_t *mac_addr);
+static void update_remote_sensor_status(void);
 
 // WiFi Event Handler
 static void wifi_event_handler(void* arg, esp_event_base_t event_base,
@@ -177,6 +186,13 @@ static void create_weather_boxes(void)
     lv_obj_set_style_text_color(outside_humidity_label, lv_color_white(), 0);
     lv_obj_align(outside_humidity_label, LV_ALIGN_CENTER, 0, 15);
 
+    // Outside status (remote sensor connection)
+    outside_status_label = lv_label_create(outside_box);
+    lv_label_set_text(outside_status_label, "Waiting...");
+    lv_obj_set_style_text_font(outside_status_label, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_color(outside_status_label, lv_color_hex(0xf39c12), 0);  // Orange color
+    lv_obj_align(outside_status_label, LV_ALIGN_BOTTOM_MID, 0, -10);
+
     // Inside Box
     inside_box = lv_obj_create(main_screen);
     lv_obj_set_size(inside_box, 250, 250);
@@ -254,9 +270,12 @@ static void update_sensor_display(lv_timer_t *timer)
             if (inside_humidity_label) {
                 lv_label_set_text(inside_humidity_label, "--%");
             }
-            ESP_LOGW(TAG, "Failed to read DHT22 sensor: %s", esp_err_to_name(ret));
+            ESP_LOGW(TAG, "Failed to read DHT22 sensor: error code %d", ret);
         }
     }
+    
+    // Update remote sensor status
+    update_remote_sensor_status();
 }
 
 // Update time display
@@ -274,6 +293,69 @@ static void update_time_display(lv_timer_t *timer)
         lv_label_set_text(time_label, strftime_buf);
     } else {
         lv_label_set_text(time_label, "Time not set");
+    }
+}
+
+// ESP-NOW data received callback
+static void esp_now_data_received_cb(const esp_now_sensor_data_t *data, const uint8_t *mac_addr)
+{
+    if (data && data->valid) {
+        // Update remote sensor data
+        remote_sensor_data = *data;
+        remote_sensor_active = true;
+        last_remote_data_time = xTaskGetTickCount() * portTICK_PERIOD_MS;
+        
+        // Update outside temperature and humidity labels immediately
+        char temp_str[16];
+        char humidity_str[16];
+        
+        snprintf(temp_str, sizeof(temp_str), "%.1f°C", data->temperature);
+        snprintf(humidity_str, sizeof(humidity_str), "%.1f%%", data->humidity);
+        
+        if (outside_temp_label) {
+            lv_label_set_text(outside_temp_label, temp_str);
+        }
+        if (outside_humidity_label) {
+            lv_label_set_text(outside_humidity_label, humidity_str);
+        }
+        
+        ESP_LOGI(TAG, "Remote sensor data updated: T=%.1f°C, H=%.1f%%, Sensor ID=%d", 
+                 data->temperature, data->humidity, data->sensor_id);
+    }
+}
+
+// Update remote sensor status
+static void update_remote_sensor_status(void)
+{
+    if (!outside_status_label) {
+        return;
+    }
+    
+    uint32_t current_time = xTaskGetTickCount() * portTICK_PERIOD_MS;
+    uint32_t timeout_ms = 60000; // 60 seconds timeout
+    
+    if (remote_sensor_active && (current_time - last_remote_data_time) < timeout_ms) {
+        // Sensor is online
+        lv_label_set_text(outside_status_label, "Online");
+        lv_obj_set_style_text_color(outside_status_label, lv_color_hex(0x27ae60), 0);  // Green color
+    } else if (remote_sensor_active) {
+        // Sensor was active but now offline
+        lv_label_set_text(outside_status_label, "Offline");
+        lv_obj_set_style_text_color(outside_status_label, lv_color_hex(0xe74c3c), 0);  // Red color
+        
+        // Show last known data or "--" if too old
+        if ((current_time - last_remote_data_time) > 300000) { // 5 minutes
+            if (outside_temp_label) {
+                lv_label_set_text(outside_temp_label, "--°C");
+            }
+            if (outside_humidity_label) {
+                lv_label_set_text(outside_humidity_label, "--%");
+            }
+        }
+    } else {
+        // No sensor data received yet
+        lv_label_set_text(outside_status_label, "Waiting...");
+        lv_obj_set_style_text_color(outside_status_label, lv_color_hex(0xf39c12), 0);  // Orange color
     }
 }
 
@@ -295,13 +377,13 @@ void weather_station_ui_init(void)
     // First test GPIO connection
     ret = dht22_test_gpio();
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "DHT22 GPIO test failed: %s", esp_err_to_name(ret));
+        ESP_LOGE(TAG, "DHT22 GPIO test failed: error code %d", ret);
     }
     
     // Initialize sensor
     ret = dht22_init();
     if (ret != ESP_OK) {
-        ESP_LOGE(TAG, "Failed to initialize DHT22 sensor: %s", esp_err_to_name(ret));
+        ESP_LOGE(TAG, "Failed to initialize DHT22 sensor: error code %d", ret);
     } else {
         ESP_LOGI(TAG, "DHT22 sensor initialized successfully");
     }
@@ -322,6 +404,15 @@ void weather_station_ui_init(void)
     // Initialize WiFi and start connection
     wifi_init();
     
+    // Initialize ESP-NOW communication
+    ESP_LOGI(TAG, "Initializing ESP-NOW communication");
+    ret = esp_now_comm_init(esp_now_data_received_cb);
+    if (ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to initialize ESP-NOW: error code %d", ret);
+    } else {
+        ESP_LOGI(TAG, "ESP-NOW communication initialized successfully");
+    }
+    
     // Start time update timer (update every second)
     time_timer = lv_timer_create(update_time_display, 1000, NULL);
     
@@ -329,4 +420,29 @@ void weather_station_ui_init(void)
     sensor_timer = lv_timer_create(update_sensor_display, 5000, NULL);
     
     ESP_LOGI(TAG, "Weather Station UI initialized successfully");
+}
+
+// Register a remote ESP-NOW sensor
+esp_err_t weather_station_register_remote_sensor(const uint8_t *mac_addr, uint8_t sensor_id, const char *name)
+{
+    return esp_now_register_sensor(mac_addr, sensor_id, name);
+}
+
+// Get the number of active remote sensors
+uint8_t weather_station_get_active_remote_sensors(void)
+{
+    esp_now_remote_sensor_t sensors[ESP_NOW_MAX_REMOTE_SENSORS];
+    uint8_t count = 0;
+    
+    if (esp_now_get_all_sensors(sensors, ESP_NOW_MAX_REMOTE_SENSORS, &count) == ESP_OK) {
+        uint8_t active_count = 0;
+        for (uint8_t i = 0; i < count; i++) {
+            if (esp_now_is_sensor_online(sensors[i].sensor_id, 60000)) { // 60 seconds timeout
+                active_count++;
+            }
+        }
+        return active_count;
+    }
+    
+    return 0;
 }
