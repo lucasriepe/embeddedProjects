@@ -231,9 +231,6 @@ static void update_sensor_display(lv_timer_t *timer)
         if (inside_humidity_label) {
             lv_label_set_text(inside_humidity_label, humidity_str);
         }
-        
-        ESP_LOGI(TAG, "Sensor data updated: %.1f°C, %.1f%%", 
-                 sensor_data.temperature, sensor_data.humidity);
     } else {
         // Try to use last valid reading
         if (dht22_get_last_reading(&sensor_data) == ESP_OK) {

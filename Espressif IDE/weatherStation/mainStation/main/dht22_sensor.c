@@ -70,31 +70,24 @@ static esp_err_t read_bit(gpio_num_t pin, uint8_t *bit)
 
 esp_err_t dht22_test_gpio(void)
 {
-    ESP_LOGI(TAG, "Testing DHT22 GPIO connection...");
-    
     gpio_num_t pin = (gpio_num_t)DHT22_GPIO_PIN;
     
     // Test 1: Set as output and toggle
     gpio_set_direction(pin, GPIO_MODE_OUTPUT);
     
-    ESP_LOGI(TAG, "Setting GPIO%d LOW", DHT22_GPIO_PIN);
     gpio_set_level(pin, 0);
     vTaskDelay(pdMS_TO_TICKS(100));
     
-    ESP_LOGI(TAG, "Setting GPIO%d HIGH", DHT22_GPIO_PIN);
     gpio_set_level(pin, 1);
     vTaskDelay(pdMS_TO_TICKS(100));
     
     // Test 2: Set as input and read level
     gpio_set_direction(pin, GPIO_MODE_INPUT);
-    int level = gpio_get_level(pin);
-    ESP_LOGI(TAG, "GPIO%d input level: %d (should be 1 with pull-up)", DHT22_GPIO_PIN, level);
     
     // Restore output mode
     gpio_set_direction(pin, GPIO_MODE_OUTPUT);
     gpio_set_level(pin, 1);
     
-    ESP_LOGI(TAG, "GPIO test completed");
     return ESP_OK;
 }
 
@@ -144,8 +137,6 @@ esp_err_t dht22_read(dht22_data_t *data)
     
     uint8_t raw_data[5] = {0};  // 40 bits = 5 bytes
     gpio_num_t pin = (gpio_num_t)DHT22_GPIO_PIN;
-    
-    ESP_LOGI(TAG, "Starting DHT22 read sequence on GPIO%d", DHT22_GPIO_PIN);
     
     // Disable interrupts during critical timing
     portDISABLE_INTERRUPTS();
@@ -237,9 +228,6 @@ esp_err_t dht22_read(dht22_data_t *data)
     // Store as last valid reading
     last_reading = *data;
     has_valid_reading = true;
-    
-    ESP_LOGI(TAG, "DHT22 reading successful: Temperature=%.1f°C, Humidity=%.1f%%", 
-             data->temperature, data->humidity);
     
     return ESP_OK;
 }
