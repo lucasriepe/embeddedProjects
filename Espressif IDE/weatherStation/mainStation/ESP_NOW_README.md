@@ -1,26 +1,26 @@
-# ESP-NOW Integration für Weather Station
+# ESP-NOW Integration for Weather Station
 
-Diese Erweiterung ermöglicht es der MainStation, Sensordaten von externen ESP8266/ESP32 Geräten über ESP-NOW zu empfangen.
+This extension enables the MainStation to receive sensor data from external ESP8266/ESP32 devices via ESP-NOW.
 
 ## 🚀 Features
 
-- **Drahtlose Kommunikation**: Empfang von Sensordaten ohne WiFi-Infrastruktur
-- **Multi-Sensor Support**: Bis zu 10 Remote-Sensoren gleichzeitig
-- **Automatische Status-Anzeige**: Online/Offline Status für jeden Sensor
-- **Kompatibilität**: Funktioniert mit ESP8266 und ESP32
-- **Energieeffizient**: Ideal für batteriebetriebene Außensensoren
+- **Wireless Communication**: Receive sensor data without WiFi infrastructure
+- **Multi-Sensor Support**: Up to 10 remote sensors simultaneously
+- **Automatic Status Display**: Online/Offline status for each sensor
+- **Compatibility**: Works with ESP8266 and ESP32
+- **Energy Efficient**: Ideal for battery-powered outdoor sensors
 
-## 📋 Verwendung
+## 📋 Usage
 
-### 1. Remote-Sensoren registrieren
+### 1. Register Remote Sensors
 
 ```c
-// In main.c nach weather_station_ui_init()
+// In main.c after weather_station_ui_init()
 uint8_t sensor_mac[] = {0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC};
-weather_station_register_remote_sensor(sensor_mac, 1, "Außensensor");
+weather_station_register_remote_sensor(sensor_mac, 1, "Outdoor Sensor");
 ```
 
-### 2. MAC-Adresse eines ESP-Geräts ermitteln
+### 2. Get MAC Address of an ESP Device
 
 ```c
 uint8_t mac[6];
@@ -29,13 +29,13 @@ printf("MAC: %02X:%02X:%02X:%02X:%02X:%02X\n",
        mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 ```
 
-### 3. Remote-Sensor Code (ESP8266/ESP32)
+### 3. Remote Sensor Code (ESP8266/ESP32)
 
 ```c
 #include "esp_now.h"
 #include "esp_wifi.h"
 
-// Datenstruktur (muss identisch zur MainStation sein)
+// Data structure (must be identical to MainStation)
 typedef struct {
     uint8_t sensor_id;
     float temperature;
@@ -45,16 +45,16 @@ typedef struct {
     bool valid;
 } esp_now_sensor_data_t;
 
-// MainStation MAC-Adresse (ersetzen Sie diese!)
+// MainStation MAC address (replace this!)
 uint8_t main_station_mac[] = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
 
 void send_sensor_data(float temp, float hum) {
     esp_now_sensor_data_t data = {
-        .sensor_id = 1,              // Eindeutige Sensor-ID
+        .sensor_id = 1,              // Unique sensor ID
         .temperature = temp,
         .humidity = hum,
         .timestamp = time(NULL),
-        .battery_voltage = 3300,     // Optional: Batteriespannung in mV
+        .battery_voltage = 3300,     // Optional: Battery voltage in mV
         .valid = true
     };
     
@@ -62,86 +62,86 @@ void send_sensor_data(float temp, float hum) {
 }
 ```
 
-## 🔧 Konfiguration
+## 🔧 Configuration
 
 ### MainStation Setup
 
-1. **ESP-NOW wird automatisch initialisiert** beim Start der UI
-2. **Sensoren registrieren** mit `weather_station_register_remote_sensor()`
-3. **Status überwachen** mit `weather_station_get_active_remote_sensors()`
+1. **ESP-NOW is automatically initialized** when starting the UI
+2. **Register sensors** with `weather_station_register_remote_sensor()`
+3. **Monitor status** with `weather_station_get_active_remote_sensors()`
 
-### Remote-Sensor Setup
+### Remote Sensor Setup
 
-1. **WiFi initialisieren** (für ESP-NOW erforderlich)
-2. **ESP-NOW initialisieren**
-3. **MainStation als Peer hinzufügen**
-4. **Sensordaten senden** in regelmäßigen Abständen
+1. **Initialize WiFi** (required for ESP-NOW)
+2. **Initialize ESP-NOW**
+3. **Add MainStation as peer**
+4. **Send sensor data** at regular intervals
 
-## 📊 UI-Anzeige
+## 📊 UI Display
 
-- **Outside Box**: Zeigt Daten vom ersten registrierten Remote-Sensor
-- **Status-Indikator**: 
-  - 🟡 **Waiting...** - Warten auf erste Daten
-  - 🟢 **Online** - Sensor sendet aktiv Daten
-  - 🔴 **Offline** - Sensor seit >60s nicht erreichbar
+- **Outside Box**: Shows data from the first registered remote sensor
+- **Status Indicator**: 
+  - 🟡 **Waiting...** - Waiting for first data
+  - 🟢 **Online** - Sensor actively sending data
+  - 🔴 **Offline** - Sensor not reachable for >60s
 
-## ⚡ Energieoptimierung für Remote-Sensoren
+## ⚡ Energy Optimization for Remote Sensors
 
 ```c
-// ESP8266/ESP32 Deep Sleep zwischen Messungen
+// ESP8266/ESP32 Deep Sleep between measurements
 void enter_deep_sleep(uint32_t sleep_time_us) {
     ESP_LOGI(TAG, "Entering deep sleep for %d seconds", sleep_time_us / 1000000);
     esp_deep_sleep(sleep_time_us);
 }
 
-// Beispiel: Alle 5 Minuten messen und senden
+// Example: Measure and send every 5 minutes
 void sensor_task() {
-    // Sensor auslesen
+    // Read sensor
     float temp, hum;
     read_dht22(&temp, &hum);
     
-    // Daten senden
+    // Send data
     send_sensor_data(temp, hum);
     
-    // 5 Minuten schlafen
+    // Sleep for 5 minutes
     enter_deep_sleep(5 * 60 * 1000000);
 }
 ```
 
 ## 🔍 Debugging
 
-### Log-Ausgaben aktivieren
+### Enable Log Output
 
 ```c
-// In sdkconfig oder menuconfig
+// In sdkconfig or menuconfig
 CONFIG_LOG_DEFAULT_LEVEL_INFO=y
 CONFIG_ESP_NOW_ENABLE=y
 ```
 
-### Häufige Probleme
+### Common Issues
 
-1. **Keine Daten empfangen**:
-   - MAC-Adressen überprüfen
-   - WiFi auf beiden Geräten initialisiert?
-   - Gleiche Datenstruktur verwendet?
+1. **No data received**:
+   - Check MAC addresses
+   - WiFi initialized on both devices?
+   - Same data structure used?
 
-2. **Sensor zeigt "Offline"**:
-   - Timeout-Wert anpassen (Standard: 60s)
-   - Sendeintervall des Remote-Sensors prüfen
+2. **Sensor shows "Offline"**:
+   - Adjust timeout value (default: 60s)
+   - Check remote sensor send interval
 
-3. **Reichweite zu gering**:
-   - Antennen optimieren
-   - Hindernisse reduzieren
-   - Sendeleistung erhöhen
+3. **Range too short**:
+   - Optimize antennas
+   - Reduce obstacles
+   - Increase transmission power
 
-## 📁 Dateien
+## 📁 Files
 
-- `esp_now_comm.h/c` - ESP-NOW Kommunikationsmodul
-- `esp_now_example.c` - Beispielcode für Sensor-Registrierung
-- `weather_station_ui.c` - Erweiterte UI mit ESP-NOW Integration
+- `esp_now_comm.h/c` - ESP-NOW communication module
+- `esp_now_example.c` - Example code for sensor registration
+- `weather_station_ui.c` - Extended UI with ESP-NOW integration
 
-## 🔗 Weiterführende Links
+## 🔗 Further Links
 
-- [ESP-NOW Dokumentation](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/network/esp_now.html)
+- [ESP-NOW Documentation](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-reference/network/esp_now.html)
 - [ESP8266 ESP-NOW Guide](https://arduino-esp8266.readthedocs.io/en/latest/esp8266wifi/readme.html#esp-now)
-- [Energieoptimierung ESP32](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/deep-sleep-stub.html)
+- [ESP32 Energy Optimization](https://docs.espressif.com/projects/esp-idf/en/latest/esp32/api-guides/deep-sleep-stub.html)

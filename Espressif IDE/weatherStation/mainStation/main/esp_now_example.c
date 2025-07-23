@@ -25,8 +25,8 @@ void register_example_remote_sensors(void)
     ESP_LOGI(TAG, "Registering example remote sensors");
     
     // Example 1: ESP8266 outdoor sensor
-    // Replace with actual MAC address of your ESP8266
-    uint8_t esp8266_mac[] = {0x12, 0x34, 0x56, 0x78, 0x9A, 0xBC};
+    // Real MAC address from your ESP8266 sensor
+    uint8_t esp8266_mac[] = {0xAC, 0x0B, 0xFB, 0xDB, 0xC5, 0x5E};
     esp_err_t ret = weather_station_register_remote_sensor(esp8266_mac, 1, "Outdoor ESP8266");
     if (ret == ESP_OK) {
         ESP_LOGI(TAG, "Registered ESP8266 outdoor sensor");
