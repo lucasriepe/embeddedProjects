@@ -1,0 +1,4 @@
+# ESP-IDF .gitignore
+
+# Build directory
+ESP32-S3-Touch-LCD-7-Demo/
