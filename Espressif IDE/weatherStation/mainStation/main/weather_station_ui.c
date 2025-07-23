@@ -140,7 +140,7 @@ static void create_time_display(void)
     time_label = lv_label_create(main_screen);
     lv_label_set_text(time_label, "Loading time...");
     lv_obj_set_style_text_font(time_label, &lv_font_montserrat_24, LV_PART_MAIN);
-    lv_obj_set_style_text_color(time_label, lv_color_white(), LV_PART_MAIN);
+    lv_obj_set_style_text_color(time_label, lv_color_black(), LV_PART_MAIN);
     lv_obj_align(time_label, LV_ALIGN_TOP_MID, 0, 20);
 }
 
@@ -273,7 +273,7 @@ static void update_time_display(lv_timer_t *timer)
     localtime_r(&now, &timeinfo);
 
     if (timeinfo.tm_year > (2016 - 1900)) {
-        strftime(strftime_buf, sizeof(strftime_buf), "%H:%M:%S", &timeinfo);
+        strftime(strftime_buf, sizeof(strftime_buf), "%H:%M", &timeinfo);
         lv_label_set_text(time_label, strftime_buf);
     } else {
         lv_label_set_text(time_label, "Time not set");
@@ -313,8 +313,8 @@ void weather_station_ui_init(void)
     main_screen = lv_obj_create(NULL);
     lv_scr_load(main_screen);
     
-    // Set background color to dark blue
-    lv_obj_set_style_bg_color(main_screen, lv_color_hex(0x1a1a2e), LV_PART_MAIN);
+    // Set background color to white
+    lv_obj_set_style_bg_color(main_screen, lv_color_white(), LV_PART_MAIN);
     
     // Create time display
     create_time_display();
