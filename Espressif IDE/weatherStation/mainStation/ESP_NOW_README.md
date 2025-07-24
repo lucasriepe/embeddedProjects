@@ -25,7 +25,7 @@ weather_station_register_remote_sensor(sensor_mac, 1, "Outdoor Sensor");
 ```c
 uint8_t mac[6];
 esp_wifi_get_mac(WIFI_IF_STA, mac);
-printf("MAC: %02X:%02X:%02X:%02X:%02X:%02X\n", 
+printf("MAC: %02X:%02X:%02X:%02X:%02X:%02X\n",
        mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 ```
 
@@ -41,7 +41,7 @@ typedef struct {
     float temperature;
     float humidity;
     uint32_t timestamp;
-    uint16_t battery_voltage;
+    uint16_t battery_voltage;   // Battery voltage in mV (0 for mains-powered)
     bool valid;
 } esp_now_sensor_data_t;
 
@@ -54,10 +54,10 @@ void send_sensor_data(float temp, float hum) {
         .temperature = temp,
         .humidity = hum,
         .timestamp = time(NULL),
-        .battery_voltage = 3300,     // Optional: Battery voltage in mV
+        .battery_voltage = 0,       // 0 for mains-powered sensors
         .valid = true
     };
-    
+
     esp_now_send(main_station_mac, (uint8_t*)&data, sizeof(data));
 }
 ```
@@ -80,7 +80,7 @@ void send_sensor_data(float temp, float hum) {
 ## 📊 UI Display
 
 - **Outside Box**: Shows data from the first registered remote sensor
-- **Status Indicator**: 
+- **Status Indicator**:
   - 🟡 **Waiting...** - Waiting for first data
   - 🟢 **Online** - Sensor actively sending data
   - 🔴 **Offline** - Sensor not reachable for >60s
@@ -99,10 +99,10 @@ void sensor_task() {
     // Read sensor
     float temp, hum;
     read_dht22(&temp, &hum);
-    
+
     // Send data
     send_sensor_data(temp, hum);
-    
+
     // Sleep for 5 minutes
     enter_deep_sleep(5 * 60 * 1000000);
 }
@@ -121,11 +121,13 @@ CONFIG_ESP_NOW_ENABLE=y
 ### Common Issues
 
 1. **No data received**:
+
    - Check MAC addresses
    - WiFi initialized on both devices?
    - Same data structure used?
 
 2. **Sensor shows "Offline"**:
+
    - Adjust timeout value (default: 60s)
    - Check remote sensor send interval
 

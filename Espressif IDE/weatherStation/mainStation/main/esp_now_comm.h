@@ -42,7 +42,7 @@ typedef struct {
     float temperature;          // Temperature in Celsius
     float humidity;             // Humidity in percentage
     uint32_t timestamp;         // Timestamp of measurement
-    uint16_t battery_voltage;   // Battery voltage in mV (optional)
+    uint16_t battery_voltage;   // Battery voltage in mV (optional, 0 for mains-powered)
     bool valid;                 // Data validity flag
 } esp_now_sensor_data_t;
 

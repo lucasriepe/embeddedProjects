@@ -34,8 +34,9 @@ void register_example_remote_sensors(void)
         ESP_LOGE(TAG, "Failed to register ESP8266 sensor: error code %d", ret);
     }
     
-    // Example 2: ESP32 garden sensor
-    // Replace with actual MAC address of your ESP32
+    // Example 2: ESP32 garden sensor (DISABLED - only using ESP8266)
+    // Uncomment and update MAC address if you add a second sensor
+    /*
     uint8_t esp32_mac[] = {0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF};
     ret = weather_station_register_remote_sensor(esp32_mac, 2, "Garden ESP32");
     if (ret == ESP_OK) {
@@ -43,6 +44,7 @@ void register_example_remote_sensors(void)
     } else {
         ESP_LOGE(TAG, "Failed to register ESP32 sensor: error code %d", ret);
     }
+    */
     
     ESP_LOGI(TAG, "Remote sensor registration completed");
 }
@@ -83,7 +85,7 @@ void print_device_mac_address(void)
  *     .temperature = 23.5,         // Temperature in Celsius
  *     .humidity = 65.2,            // Humidity in percentage
  *     .timestamp = time(NULL),     // Current timestamp
- *     .battery_voltage = 3300,     // Battery voltage in mV (optional)
+ *     .battery_voltage = 0,        // 0 for mains-powered, or voltage in mV for battery
  *     .valid = true                // Data validity flag
  * };
  * 
