@@ -115,3 +115,12 @@ menu "Example Configuration"
                 Height of LVGL buffer. The width of the buffer is the same as that of the LCD.
     endmenu
 endmenu
+
+menu "WiFi Configuration"
+config WIFI_SSID
+    string "WiFi SSID"
+    default "myssid"
+config WIFI_PASSWORD
+    string "WiFi Password"
+    default "mypassword"
+endmenu

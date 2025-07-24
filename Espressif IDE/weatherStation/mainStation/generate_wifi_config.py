@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Script to generate WiFi configuration from .env file
+Script to generate configuration from .env file (WiFi config removed)
 """
 
 import os
@@ -18,49 +18,10 @@ def load_env_file(env_path):
                     env_vars[key.strip()] = value.strip()
     return env_vars
 
-def generate_wifi_config_header(env_vars, output_path):
-    """Generates the wifi_config.h file"""
-    wifi_ssid = env_vars.get('WIFI_SSID', 'YourWiFiName')
-    wifi_password = env_vars.get('WIFI_PASSWORD', 'YourWiFiPassword')
-    timezone = env_vars.get('TIMEZONE', 'CET-1CEST,M3.5.0,M10.5.0/3')
-    
-    header_content = f'''#ifndef WIFI_CONFIG_H
-#define WIFI_CONFIG_H
-
-// Automatically generated from .env file
-// DO NOT EDIT MANUALLY!
-
-#define WIFI_SSID "{wifi_ssid}"
-#define WIFI_PASS "{wifi_password}"
-#define TIMEZONE_STRING "{timezone}"
-
-#endif // WIFI_CONFIG_H
-'''
-    
-    with open(output_path, 'w', encoding='utf-8') as f:
-        f.write(header_content)
-    
-    print(f"WiFi configuration generated: {output_path}")
-    print(f"SSID: {wifi_ssid}")
-    print(f"Password: {'*' * len(wifi_password)}")
-    print(f"Timezone: {timezone}")
+# WiFi config generation removed
 
 def main():
-    # Define paths
-    script_dir = Path(__file__).parent
-    env_file = script_dir / '.env'
-    output_file = script_dir / 'main' / 'wifi_config.h'
-    
-    # Load .env file
-    env_vars = load_env_file(env_file)
-    
-    if not env_vars:
-        print("Warning: .env file not found or empty!")
-        print("Create .env file with WIFI_SSID and WIFI_PASSWORD")
-        return
-    
-    # Generate header file
-    generate_wifi_config_header(env_vars, output_file)
+    print("WiFi config generation has been removed from this script.")
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

@@ -46,6 +46,10 @@ static void update_time_display(lv_timer_t *timer);
 static void update_sensor_display(lv_timer_t *timer);
 static void update_remote_sensor_status(void);
 
+//WIFI config
+#define EXAMPLE_WIFI_SSID CONFIG_WIFI_SSID
+#define EXAMPLE_WIFI_PASS CONFIG_WIFI_PASSWORD
+
 // WiFi Event Handler
 static void wifi_event_handler(void* arg, esp_event_base_t event_base,
                               int32_t event_id, void* event_data)
@@ -94,8 +98,8 @@ static void wifi_init(void)
 
     wifi_config_t wifi_config = {
         .sta = {
-            .ssid = WIFI_SSID,
-            .password = WIFI_PASS,
+            .ssid = EXAMPLE_WIFI_SSID,
+            .password = EXAMPLE_WIFI_PASS,
             .threshold.authmode = WIFI_AUTH_WPA2_PSK,
         },
     };
