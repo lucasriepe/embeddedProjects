@@ -4,7 +4,8 @@
 build/
 
 #wifi config
-main/wifi_config.h
+main/*wifi_config.h
+**/wifi_config.h
 
 # SDK configuration
 sdkconfig
