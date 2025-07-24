@@ -66,8 +66,8 @@ bootloader-flash_args
 app-flash_args
 partition-table-flash_args
 
-# Test files (keep pytest files if needed for CI/CD)
-# pytest_*.py
+# Test files
+pytest_*.py
 
 # Local environment variables
 .env
