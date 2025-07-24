@@ -1,3 +1,105 @@
+# ESP-IDF .gitignore
+
+# Build directory
 build/
-sdkconfig
+
+# SDK configuration
 sdkconfig.old
+sdkconfig.backup
+
+# Dependencies
+dependencies.lock
+
+# Managed components (downloaded by component manager)
+managed_components/
+
+# Python bytecode
+*.pyc
+__pycache__/
+
+# Editor and IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# Flash download tool files
+*.bin
+*.elf
+*.map
+
+# Bootloader files (if auto-generated)
+bootloader.bin
+partition-table.bin
+
+# Component manager cache
+.component_dependencies/
+
+# CLion
+cmake-build-*/
+
+# Visual Studio Code
+.vscode/settings.json
+.vscode/tasks.json
+.vscode/launch.json
+.vscode/extensions.json
+
+# Clang
+.clangd/
+.cache/
+
+# ESP-IDF specific
+esp-idf/
+.espressif/
+
+# Certificate files (if any)
+*.pem
+*.crt
+*.key
+
+# Test coverage
+coverage/
+*.gcov
+*.gcda
+*.gcno
+
+# Documentation build
+docs/_build/
+docs/doxygen-warning-log.txt
+
+# Local environment variables
+.env
+.env.local
+
+# Backup files
+*.bak
+*.backup
+
+# Core dumps
+core
+core.*
+
+# Flash args
+flash_project_args
+flash_app_args
+flash_bootloader_args
+
+# Project specific temporary files
+project_description.json

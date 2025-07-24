@@ -2,9 +2,7 @@
   "C_Cpp.intelliSenseEngine": "default",
   "idf.espIdfPath": "/Users/lucasriepe/esp/esp-idf",
   "idf.pythonInstallPath": "/Users/lucasriepe/.espressif/python_env/idf5.4_py3.8_env/bin/python3",
-  "idf.openOcdConfigs": [
-    "board/esp32s3-builtin.cfg"
-  ],
+  "idf.openOcdConfigs": ["board/esp32s3-builtin.cfg"],
   "idf.port": "/dev/tty.wchusbserial59700492591",
   "idf.toolsPath": "/Users/lucasriepe/.espressif",
   "idf.customExtraVars": {
@@ -15,5 +13,6 @@
     "--background-index",
     "--query-driver=/Users/lucasriepe/.espressif/tools/xtensa-esp-elf/esp-14.2.0_20241119/xtensa-esp-elf/bin/xtensa-esp32-elf-gcc",
     "--compile-commands-dir=${workspaceFolder}/build"
-  ]
+  ],
+  "idf.flashType": "UART"
 }

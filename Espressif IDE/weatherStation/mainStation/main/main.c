@@ -10,10 +10,6 @@
 
 static const char *MAIN_TAG = "main";
 
-// ESP-NOW example functions (from esp_now_example.c)
-void register_example_remote_sensors(void);
-void print_device_mac_address(void);
-
 void app_main()
 {
     waveshare_esp32_s3_rgb_lcd_init(); // Initialize the Waveshare ESP32-S3 RGB LCD 
@@ -23,15 +19,8 @@ void app_main()
     ESP_LOGI(MAIN_TAG, "Display Weather Station UI");
     // Lock the mutex due to the LVGL APIs are not thread-safe
     if (lvgl_port_lock(-1)) {
-        // Initialize custom weather station UI (includes ESP-NOW)
+        // Initialize custom weather station UI
         weather_station_ui_init();
-        
-        // Print this device's MAC address for reference
-        print_device_mac_address();
-        
-        // Register example remote sensors
-        // IMPORTANT: Update MAC addresses in esp_now_example.c with your actual device MACs!
-        register_example_remote_sensors();
         
         // You can also use the built-in LVGL demos:
         // lv_demo_stress();
