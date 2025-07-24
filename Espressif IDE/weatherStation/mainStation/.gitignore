@@ -3,6 +3,9 @@
 # Build directory
 build/
 
+#wifi config
+main/wifi_config.h
+
 # SDK configuration
 sdkconfig
 sdkconfig.old
@@ -63,8 +66,8 @@ cmake-build-*/
 .vscode/extensions.json
 
 # Clang
-.clangd/
-.cache/
+.clangd
+.cache
 
 # ESP-IDF specific
 esp-idf/
@@ -104,3 +107,5 @@ flash_bootloader_args
 
 # Project specific temporary files
 project_description.json
+
+wifi_config.h
