@@ -4,6 +4,7 @@
 build/
 
 # SDK configuration
+sdkconfig
 sdkconfig.old
 sdkconfig.backup
 
