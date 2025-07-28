@@ -42,15 +42,16 @@ void handleDHT() {
   float tDht = dht.readTemperature();
 
   if (isnan(hDht) || isnan(tDht)) {
-    server.send(500, "text/html", "DHT FAILD");
+    String errorJson = "{\"error\": \"DHT sensor failed to read data\", \"status\": \"error\"}";
+    server.send(500, "application/json", errorJson);
     return;
   }
 
   float hicDht = dht.computeHeatIndex(tDht, hDht, false);
 
-  String json = "{'sensor': 'DHT', 'humI': "+String(hDht)+", 'temp': "+String(tDht)+", 'tmpIndex': "+String(hicDht)+" }";
+  String json = "{\"sensor\": \"DHT\", \"humidity\": " + String(hDht, 2) + ", \"temperature\": " + String(tDht, 2) + ", \"heatIndex\": " + String(hicDht, 2) + ", \"status\": \"success\"}";
 
-  server.send(200, "text/html", json);
+  server.send(200, "application/json", json);
 }
 
 void setup(void) {
