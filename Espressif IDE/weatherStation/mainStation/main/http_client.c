@@ -118,28 +118,35 @@ esp_err_t http_client_fetch_sensor_data(const char* url, outside_sensor_data_t* 
              cJSON *json = cJSON_Parse(json_str);
              if (json) {
                  cJSON *sensor = cJSON_GetObjectItem(json, "sensor");
-                 cJSON *temp = cJSON_GetObjectItem(json, "temp");
-                 cJSON *humidity = cJSON_GetObjectItem(json, "humI");  // Changed from "humidity" to "humI"
-                 cJSON *temp_index = cJSON_GetObjectItem(json, "tmpIndex");
+                 cJSON *temperature = cJSON_GetObjectItem(json, "temperature");
+                 cJSON *humidity = cJSON_GetObjectItem(json, "humidity");
+                 cJSON *heat_index = cJSON_GetObjectItem(json, "heatIndex");
+                 cJSON *status = cJSON_GetObjectItem(json, "status");
                 
-                if (sensor && temp && humidity && temp_index) {
-                    // Copy sensor type
-                    strncpy(data->sensor_type, cJSON_GetStringValue(sensor), sizeof(data->sensor_type) - 1);
-                    data->sensor_type[sizeof(data->sensor_type) - 1] = '\0';
-                    
-                    // Copy sensor values
-                    data->temperature = (float)cJSON_GetNumberValue(temp);
-                    data->humidity = (float)cJSON_GetNumberValue(humidity);
-                    data->temp_index = (float)cJSON_GetNumberValue(temp_index);
-                    data->valid = true;
-                    
-                    ESP_LOGI(TAG, "Parsed sensor data: %s, Temp: %.1f°C, Humidity: %.1f%%, TempIndex: %.1f", 
-                             data->sensor_type, data->temperature, data->humidity, data->temp_index);
-                    
-                    cJSON_Delete(json);
-                    free(json_str);
-                    esp_http_client_cleanup(client);
-                    return ESP_OK;
+                if (sensor && temperature && humidity && heat_index && status) {
+                    // Check if status is "success"
+                    const char *status_str = cJSON_GetStringValue(status);
+                    if (status_str && strcmp(status_str, "success") == 0) {
+                        // Copy sensor type
+                        strncpy(data->sensor_type, cJSON_GetStringValue(sensor), sizeof(data->sensor_type) - 1);
+                        data->sensor_type[sizeof(data->sensor_type) - 1] = '\0';
+                        
+                        // Copy sensor values
+                        data->temperature = (float)cJSON_GetNumberValue(temperature);
+                        data->humidity = (float)cJSON_GetNumberValue(humidity);
+                        data->temp_index = (float)cJSON_GetNumberValue(heat_index);
+                        data->valid = true;
+                        
+                        ESP_LOGI(TAG, "Parsed sensor data: %s, Temp: %.1f°C, Humidity: %.1f%%, HeatIndex: %.1f, Status: %s", 
+                                 data->sensor_type, data->temperature, data->humidity, data->temp_index, status_str);
+                        
+                        cJSON_Delete(json);
+                        free(json_str);
+                        esp_http_client_cleanup(client);
+                        return ESP_OK;
+                    } else {
+                        ESP_LOGE(TAG, "Sensor status is not success: %s", status_str ? status_str : "null");
+                    }
                 } else {
                     ESP_LOGE(TAG, "Missing required fields in JSON response");
                 }

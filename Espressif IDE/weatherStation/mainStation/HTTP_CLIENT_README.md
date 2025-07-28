@@ -12,8 +12,9 @@ This implementation replaces ESP-NOW communication with HTTP-based data retrieva
 
 ### 2. `http_client.c`
 - Implements HTTP client using ESP-IDF HTTP Client API
-- Parses JSON response in the format: `{'sensor': 'DHT', 'humI': 51.50, 'temp': 28.20, 'tmpIndex': 28.82}`
+- Parses JSON response in the format: `{"sensor": "DHT", "humidity": 65.20, "temperature": 23.50, "heatIndex": 24.15, "status": "success"}`
 - Handles HTTP errors and network issues
+- Validates response status field for successful data retrieval
 
 ### 3. Updated `weather_station_ui.c`
 - Integrates HTTP client for outside sensor data
