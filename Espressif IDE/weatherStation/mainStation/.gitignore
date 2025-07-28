@@ -3,10 +3,6 @@
 # Build directory
 build/
 
-#wifi config
-main/*wifi_config.h
-**/wifi_config.h
-
 # SDK configuration
 sdkconfig
 sdkconfig.old
@@ -89,10 +85,6 @@ coverage/
 docs/_build/
 docs/doxygen-warning-log.txt
 
-# Local environment variables
-.env
-.env.local
-
 # Backup files
 *.bak
 *.backup
@@ -108,5 +100,3 @@ flash_bootloader_args
 
 # Project specific temporary files
 project_description.json
-
-wifi_config.h

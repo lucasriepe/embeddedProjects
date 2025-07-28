@@ -4,22 +4,23 @@ A modern weather station implementation using ESP32-S3 with LVGL GUI, WiFi conne
 
 ## Features
 
-- **Modern GUI**: Clean interface with green header bar and time display
-- **WiFi Connectivity**: Automatic connection with reconnection logic
-- **Time Display**: German time (CET/CEST) with automatic daylight saving time
-- **Secure Configuration**: WiFi credentials stored in `.env` file (not committed to git)
-- **Custom Hostname**: Device appears as "ESPmainStation" on the network
+- **Modern GUI**: Clean interface with weather data display
+- **WiFi Connectivity**: Automatic connection with configurable retry logic
+- **Time Display**: Configurable timezone with automatic daylight saving time
+- **Sensor Data**: Inside DHT22 sensor and outside HTTP sensor support
+- **Secure Configuration**: All settings configured via ESP-IDF menuconfig
+- **Custom Hostname**: Configurable device hostname for network identification
 
 ## Hardware Requirements
 
 - ESP32-S3 development board
 - Compatible LCD display with touch support
 - Waveshare RGB LCD (as configured in this project)
+- DHT22 temperature/humidity sensor
 
 ## Software Requirements
 
-- ESP-IDF (Espressif IoT Development Framework)
-- Python 3.x
+- ESP-IDF (Espressif IoT Development Framework) v5.x
 - Git
 
 ## Project Setup
@@ -35,38 +36,32 @@ cd weatherStation/mainStation
 
 Follow the [ESP-IDF Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/latest/esp32s3/get-started/index.html) to install ESP-IDF for your operating system.
 
-### 3. Configure WiFi Credentials
+### 3. Configure Project Settings
 
-1. Copy the example environment file:
+Configure all project settings using the ESP-IDF configuration system:
 
-   ```bash
-   cp .env.example .env
-   ```
+```bash
+idf.py menuconfig
+```
 
-2. Edit the `.env` file with your WiFi credentials and timezone:
+Navigate to **Weather Station Configuration** to configure:
 
-   ```
-   # WiFi Configuration
-   WIFI_SSID=YourWiFiNetworkName
-   WIFI_PASSWORD=YourWiFiPassword
-   
-   # Timezone Configuration
-   # Format: TZ environment variable format
-   # Examples:
-   # Europe/Berlin (Germany): CET-1CEST,M3.5.0,M10.5.0/3
-   # America/New_York (USA East): EST5EDT,M3.2.0,M11.1.0
-   # America/Los_Angeles (USA West): PST8PDT,M3.2.0,M11.1.0
-   # Asia/Tokyo (Japan): JST-9
-   # UTC: UTC0
-   TIMEZONE=CET-1CEST,M3.5.0,M10.5.0/3
-   ```
+#### WiFi Configuration
+- WiFi SSID and Password
+- Device Hostname
+- Maximum Retry Attempts
+- Scan Method and Power Save Settings
+- HTTP Client Timeout
+- Outside Sensor URL
+- Sensor Update Interval
 
-3. Generate the WiFi configuration header:
-   ```bash
-   python3 generate_wifi_config.py
-   ```
+#### Time Configuration
+- Timezone (predefined options or custom POSIX string)
+- NTP Servers (primary and backup)
 
-   This will create `main/wifi_config.h` with your WiFi credentials and timezone settings.
+For detailed configuration instructions, see:
+- [WiFi Configuration Guide](WIFI_CONFIG_GUIDE.md)
+- [Timezone Configuration Guide](TIMEZONE_CONFIG_GUIDE.md)
 
 ### 4. Build the Project
 
@@ -109,21 +104,26 @@ Follow the [ESP-IDF Getting Started Guide](https://docs.espressif.com/projects/e
 
 ```
 mainStation/
-├── .env                    # WiFi credentials (not in git)
-├── .env.example           # Example environment file
 ├── .gitignore             # Git ignore rules
 ├── CMakeLists.txt         # Main CMake configuration
 ├── README.md              # This file
+├── WIFI_CONFIG_GUIDE.md   # WiFi configuration guide
+├── TIMEZONE_CONFIG_GUIDE.md # Timezone configuration guide
+├── HTTP_CLIENT_README.md  # HTTP client documentation
 ├── components/            # External components
 │   ├── espressif__esp_lcd_touch/
 │   ├── espressif__esp_lcd_touch_gt911/
 │   └── lvgl__lvgl/
-├── generate_wifi_config.py # Script to generate WiFi config
 ├── main/                  # Main application code
 │   ├── CMakeLists.txt
+│   ├── Kconfig.projbuild  # Project configuration options
 │   ├── main.c             # Application entry point
 │   ├── weather_station_ui.c # Main UI and WiFi logic
-│   ├── wifi_config.h      # Generated WiFi configuration
+│   ├── weather_station_ui.h # UI header file
+│   ├── dht22_sensor.c     # DHT22 sensor driver
+│   ├── dht22_sensor.h     # DHT22 sensor header
+│   ├── http_client.c      # HTTP client implementation
+│   ├── http_client.h      # HTTP client header
 │   ├── lvgl_port.c        # LVGL porting layer
 │   └── waveshare_rgb_lcd_port.c # LCD driver
 ├── partitions.csv         # Custom partition table
@@ -135,15 +135,24 @@ mainStation/
 
 ### WiFi Configuration
 
-The project uses a secure configuration system:
+The project uses the ESP-IDF configuration system for all settings:
 
-1. WiFi credentials are stored in `.env` file (excluded from git)
-2. Run `python3 generate_wifi_config.py` to generate `main/wifi_config.h`
-3. The generated header file contains the WiFi credentials for compilation
+1. All WiFi settings are configured via `idf.py menuconfig`
+2. Navigate to **Weather Station Configuration** → **WiFi Configuration**
+3. Configure SSID, password, hostname, retry attempts, and power settings
+4. Settings are stored in `sdkconfig` and compiled into the firmware
+
+For detailed WiFi configuration options, see [WIFI_CONFIG_GUIDE.md](WIFI_CONFIG_GUIDE.md).
 
 ### Time Configuration
 
-The device supports configurable timezones through the `TIMEZONE` variable in the `.env` file. The timezone format follows the POSIX TZ environment variable format.
+The device supports configurable timezones through the ESP-IDF configuration system:
+
+1. Use `idf.py menuconfig` to access **Weather Station Configuration** → **Time Configuration**
+2. Choose from predefined timezones or enter a custom POSIX string
+3. Configure primary and backup NTP servers
+
+For detailed timezone configuration, see [TIMEZONE_CONFIG_GUIDE.md](TIMEZONE_CONFIG_GUIDE.md).
 
 #### Common Timezone Examples:
 - **Germany (CET/CEST)**: `CET-1CEST,M3.5.0,M10.5.0/3`
@@ -154,30 +163,19 @@ The device supports configurable timezones through the `TIMEZONE` variable in th
 - **UK (GMT/BST)**: `GMT0BST,M3.5.0,M10.5.0/3`
 - **Australia Sydney (AEST/AEDT)**: `AEST-10AEDT,M10.1.0,M4.1.0/3`
 
-#### Timezone Format Explanation:
-The format is: `STD[offset]DST[offset],start[/time],end[/time]`
-- **STD**: Standard time zone abbreviation
-- **offset**: Hours offset from UTC (negative for east of UTC)
-- **DST**: Daylight saving time abbreviation (optional)
-- **start**: When DST starts (M = month, week, day)
-- **end**: When DST ends
+### Sensor Configuration
 
-Example: `CET-1CEST,M3.5.0,M10.5.0/3`
-- CET: Central European Time
-- -1: 1 hour ahead of UTC
-- CEST: Central European Summer Time
-- M3.5.0: DST starts on the last (5th) Sunday (0) of March (3)
-- M10.5.0/3: DST ends on the last Sunday of October at 3 AM
-
-- **NTP Servers**: `pool.ntp.org` and `de.pool.ntp.org`
-- **Display Format**: HH:MM (24-hour format without seconds)
+- **Inside Sensor**: DHT22 connected to configurable GPIO pin
+- **Outside Sensor**: HTTP client fetches data from configurable URL
+- **Update Interval**: Configurable sensor reading interval
+- **HTTP Timeout**: Configurable timeout for HTTP requests
 
 ### Display Configuration
 
-- **Background**: Light gray (#F5F5F5)
-- **Header Bar**: Green (#4CAF50) with "Weatherstation" title
-- **Time Display**: Black text in top-right corner
-- **Font**: Montserrat (18pt for time, 20pt for title)
+- **Background**: White background with colored sensor boxes
+- **Time Display**: Configurable timezone with HH:MM format
+- **Sensor Boxes**: Inside and Outside sensor data with status indicators
+- **Font**: Montserrat font family for clean appearance
 
 ## Troubleshooting
 
@@ -189,9 +187,16 @@ Example: `CET-1CEST,M3.5.0,M10.5.0/3`
 
 ### WiFi Issues
 
-1. **Connection failed**: Check WiFi credentials in `.env` file
+1. **Connection failed**: Check WiFi credentials in menuconfig
 2. **Hostname not visible**: Some routers may take time to update device names
 3. **Time not syncing**: Ensure internet connectivity and check NTP server accessibility
+4. **Maximum retries reached**: Increase the retry count in menuconfig
+
+### Sensor Issues
+
+1. **Inside sensor error**: Check DHT22 wiring and power
+2. **Outside sensor error**: Verify the outside sensor URL and HTTP timeout settings
+3. **"HTTP Error" message**: Check WiFi connectivity and outside sensor availability
 
 ### Display Issues
 
@@ -217,10 +222,11 @@ Example: `CET-1CEST,M3.5.0,M10.5.0/3`
 
 ## Security Notes
 
-- Never commit `.env` file to version control
+- WiFi credentials are stored securely in the ESP-IDF configuration system
 - Use strong WiFi passwords
 - Consider implementing OTA updates for production use
 - Validate all external data inputs
+- Review HTTP client security settings for production deployments
 
 ## License
 

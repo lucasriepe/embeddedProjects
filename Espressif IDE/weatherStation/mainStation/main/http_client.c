@@ -67,12 +67,14 @@ esp_err_t http_client_fetch_sensor_data(const char* url, outside_sensor_data_t* 
     memset(http_recv_buffer, 0, sizeof(http_recv_buffer));
     http_recv_len = 0;
 
-    // Configure HTTP client
+    // Configure HTTP client with configurable timeout
     esp_http_client_config_t config = {
         .url = url,
         .event_handler = http_event_handler,
-        .timeout_ms = 5000,
+        .timeout_ms = CONFIG_HTTP_CLIENT_TIMEOUT_MS,
     };
+
+    ESP_LOGI(TAG, "HTTP client configured with timeout: %d ms", CONFIG_HTTP_CLIENT_TIMEOUT_MS);
 
     esp_http_client_handle_t client = esp_http_client_init(&config);
     if (!client) {

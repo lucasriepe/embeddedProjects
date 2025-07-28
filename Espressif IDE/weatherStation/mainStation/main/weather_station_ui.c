@@ -13,14 +13,13 @@
 #include "esp_sntp.h"
 #include "time.h"
 #include "sys/time.h"
-#include "wifi_config.h"  // Generated from .env file
 #include "dht22_sensor.h"  // DHT22 sensor integration
 #include "http_client.h"  // HTTP client for remote sensor data
 
 static const char *TAG = "weather_ui";
 
-// URL for outside sensor data
-#define OUTSIDE_SENSOR_URL "http://192.168.178.47/dht"
+// URL for outside sensor data - now configurable
+#define OUTSIDE_SENSOR_URL CONFIG_OUTSIDE_SENSOR_URL
 
 // Global variables
 static lv_obj_t *main_screen;
@@ -51,39 +50,58 @@ static void update_time_display(lv_timer_t *timer);
 static void update_sensor_display(lv_timer_t *timer);
 static void update_remote_sensor_status(void);
 
-// WiFi Event Handler
+// WiFi retry counter
+static int wifi_retry_count = 0;
+
+// WiFi Event Handler with configurable retry attempts
 static void wifi_event_handler(void* arg, esp_event_base_t event_base,
                               int32_t event_id, void* event_data)
 {
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
         esp_wifi_connect();
+        ESP_LOGI(TAG, "WiFi started, attempting connection");
     } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
-        esp_wifi_connect();
-        wifi_connected = false;
-        ESP_LOGI(TAG, "Retry to connect to the AP");
+        if (wifi_retry_count < CONFIG_WIFI_MAXIMUM_RETRY) {
+            esp_wifi_connect();
+            wifi_retry_count++;
+            wifi_connected = false;
+            ESP_LOGI(TAG, "Retry to connect to the AP (attempt %d/%d)", 
+                     wifi_retry_count, CONFIG_WIFI_MAXIMUM_RETRY);
+        } else {
+            ESP_LOGW(TAG, "Maximum retry attempts (%d) reached, stopping connection attempts", 
+                     CONFIG_WIFI_MAXIMUM_RETRY);
+            wifi_connected = false;
+        }
     } else if (event_base == IP_EVENT && event_id == IP_EVENT_STA_GOT_IP) {
         ip_event_got_ip_t* event = (ip_event_got_ip_t*) event_data;
         ESP_LOGI(TAG, "Got IP:" IPSTR, IP2STR(&event->ip_info.ip));
         wifi_connected = true;
+        wifi_retry_count = 0; // Reset retry counter on successful connection
         
         // Synchronize time when WiFi is connected
         time_sync_init();
     }
 }
 
-// Initialize WiFi
+// WiFi initialization with configurable parameters
 static void wifi_init(void)
 {
+    ESP_LOGI(TAG, "Initializing WiFi with configurable parameters");
+    
+    // Initialize network interface
     ESP_ERROR_CHECK(esp_netif_init());
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
     
-    // Set hostname
-    ESP_ERROR_CHECK(esp_netif_set_hostname(sta_netif, "ESPmainStation"));
+    // Set hostname from configuration
+    ESP_ERROR_CHECK(esp_netif_set_hostname(sta_netif, CONFIG_WIFI_HOSTNAME));
+    ESP_LOGI(TAG, "Device hostname set to: %s", CONFIG_WIFI_HOSTNAME);
 
+    // WiFi configuration
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_wifi_init(&cfg));
 
+    // Register event handlers
     esp_event_handler_instance_t instance_any_id;
     esp_event_handler_instance_t instance_got_ip;
     ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
@@ -97,36 +115,58 @@ static void wifi_init(void)
                                                         NULL,
                                                         &instance_got_ip));
 
+    // Configure WiFi connection parameters
     wifi_config_t wifi_config = {
         .sta = {
-            .ssid = WIFI_SSID,
-            .password = WIFI_PASS,
-            .threshold.authmode = WIFI_AUTH_WPA2_PSK,
+            .ssid = CONFIG_WIFI_SSID,
+            .password = CONFIG_WIFI_PASSWORD,
+            .threshold.authmode = CONFIG_WIFI_SCAN_AUTH_MODE_THRESHOLD,
+            .scan_method = CONFIG_WIFI_SCAN_METHOD_FAST ? WIFI_FAST_SCAN : WIFI_ALL_CHANNEL_SCAN,
+            .sort_method = CONFIG_WIFI_CONNECT_AP_BY_SIGNAL ? WIFI_CONNECT_AP_BY_SIGNAL : WIFI_CONNECT_AP_BY_SECURITY,
         },
     };
+    
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
+    
+    // Configure power save mode if enabled
+    if (CONFIG_WIFI_POWER_SAVE_MODE) {
+        esp_wifi_ps_type_t ps_type = CONFIG_WIFI_POWER_SAVE_MIN_MODEM ? WIFI_PS_MIN_MODEM : WIFI_PS_MAX_MODEM;
+        ESP_ERROR_CHECK(esp_wifi_set_ps(ps_type));
+        ESP_LOGI(TAG, "WiFi power save mode enabled: %s", 
+                 CONFIG_WIFI_POWER_SAVE_MIN_MODEM ? "Min Modem" : "Max Modem");
+    } else {
+        ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
+        ESP_LOGI(TAG, "WiFi power save mode disabled");
+    }
+    
     ESP_ERROR_CHECK(esp_wifi_start());
 
-    ESP_LOGI(TAG, "WiFi initialization completed. Hostname: ESPmainStation, connecting to %s...", WIFI_SSID);
+    ESP_LOGI(TAG, "WiFi initialization complete");
+    ESP_LOGI(TAG, "Connecting to SSID: %s", CONFIG_WIFI_SSID);
+    ESP_LOGI(TAG, "Maximum retry attempts: %d", CONFIG_WIFI_MAXIMUM_RETRY);
 }
 
-// Initialize time synchronization
+// Initialize time synchronization with configurable timezone and NTP servers
 static void time_sync_init(void)
 {
-    ESP_LOGI(TAG, "Initializing SNTP with configurable timezone");
+    ESP_LOGI(TAG, "Initializing SNTP with configurable timezone and NTP servers");
     esp_sntp_setoperatingmode(SNTP_OPMODE_POLL);
-    esp_sntp_setservername(0, "pool.ntp.org");
-    esp_sntp_setservername(1, "de.pool.ntp.org");  // German NTP servers
+    
+    // Use configured NTP servers from Kconfig
+    esp_sntp_setservername(0, CONFIG_NTP_SERVER);
+    esp_sntp_setservername(1, CONFIG_NTP_SERVER_BACKUP);
     esp_sntp_init();
 
-    // Set timezone from configuration
-    setenv("TZ", TIMEZONE_STRING, 1);
+    // Set timezone from Kconfig configuration
+    setenv("TZ", CONFIG_TIMEZONE_POSIX, 1);
     tzset();
 
     // Wait for time synchronization (simplified)
     ESP_LOGI(TAG, "SNTP started, waiting for synchronization...");
-    ESP_LOGI(TAG, "Using timezone: %s", TIMEZONE_STRING);
+    ESP_LOGI(TAG, "Using timezone: %s", CONFIG_TIMEZONE_POSIX);
+    ESP_LOGI(TAG, "Primary NTP server: %s", CONFIG_NTP_SERVER);
+    ESP_LOGI(TAG, "Backup NTP server: %s", CONFIG_NTP_SERVER_BACKUP);
     vTaskDelay(5000 / portTICK_PERIOD_MS); // Wait 5 seconds
     
     time_t now;
@@ -416,8 +456,9 @@ void weather_station_ui_init(void)
     // Start time update timer (update every second)
     time_timer = lv_timer_create(update_time_display, 1000, NULL);
     
-    // Start sensor update timer (update every 10 seconds for both inside and outside sensors)
-    sensor_timer = lv_timer_create(update_sensor_display, 10000, NULL);
+    // Start sensor update timer with configurable interval
+    sensor_timer = lv_timer_create(update_sensor_display, CONFIG_SENSOR_UPDATE_INTERVAL_MS, NULL);
+    ESP_LOGI(TAG, "Sensor update timer started with interval: %d ms", CONFIG_SENSOR_UPDATE_INTERVAL_MS);
     
     // Initial sensor reading
     update_sensor_display(NULL);

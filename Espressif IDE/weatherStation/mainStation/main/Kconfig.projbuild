@@ -1,4 +1,4 @@
-menu "Example Configuration"
+menu "Display Configuration"
 
     menu "Display"
         config EXAMPLE_LCD_RGB_BOUNCE_BUFFER_HEIGHT
@@ -117,10 +117,179 @@ menu "Example Configuration"
 endmenu
 
 menu "WiFi Configuration"
-config WIFI_SSID
-    string "WiFi SSID"
-    default "myssid"
-config WIFI_PASSWORD
-    string "WiFi Password"
-    default "mypassword"
+    config WIFI_SSID
+        string "WiFi SSID"
+        default "myssid"
+        help
+            SSID (network name) for the WiFi network to connect to.
+
+    config WIFI_PASSWORD
+        string "WiFi Password"
+        default "mypassword"
+        help
+            Password for the WiFi network.
+
+    config WIFI_HOSTNAME
+        string "Device Hostname"
+        default "weatherstation"
+        help
+            Hostname for the device on the network.
+
+    config WIFI_MAXIMUM_RETRY
+        int "Maximum retry attempts"
+        default 5
+        range 1 20
+        help
+            Maximum number of retry attempts when connecting to WiFi.
+
+    config WIFI_SCAN_AUTH_MODE_THRESHOLD
+        int "WiFi Scan auth mode threshold"
+        default 3
+        range 0 6
+        help
+            The weakest authmode to accept in the scan mode.
+            This value defaults to ESP_WIFI_AUTH_WPA2_PSK incase password is present and ESP_WIFI_AUTH_OPEN is used.
+            Please select ESP_WIFI_AUTH_WEP/ESP_WIFI_AUTH_WPA_PSK incase AP is operating in WEP/WPA mode.
+
+    choice WIFI_SCAN_METHOD
+        prompt "WiFi Scan Method"
+        default WIFI_SCAN_METHOD_FAST
+        help
+            WiFi scan method:
+            - Fast: Scan will end after find SSID match AP
+            - All Channel: Scan will end after scan all the channel
+
+        config WIFI_SCAN_METHOD_FAST
+            bool "Fast"
+        config WIFI_SCAN_METHOD_ALL_CHANNEL
+            bool "All Channel"
+    endchoice
+
+    choice WIFI_CONNECT_AP_SORT_METHOD
+        prompt "WiFi Connect AP Sort Method"
+        default WIFI_CONNECT_AP_BY_SIGNAL
+        help
+            WiFi connect AP sort method:
+            - Signal: Sort matched AP in scan list by RSSI
+            - Security: Sort matched AP in scan list by authmode
+
+        config WIFI_CONNECT_AP_BY_SIGNAL
+            bool "Signal"
+        config WIFI_CONNECT_AP_BY_SECURITY
+            bool "Security"
+    endchoice
+
+    config WIFI_POWER_SAVE_MODE
+        bool "Enable WiFi Power Save Mode"
+        default n
+        help
+            Enable WiFi power save mode to reduce power consumption.
+
+    choice WIFI_POWER_SAVE_TYPE
+        depends on WIFI_POWER_SAVE_MODE
+        prompt "WiFi Power Save Type"
+        default WIFI_POWER_SAVE_MIN_MODEM
+        help
+            WiFi power save type:
+            - Min Modem: Minimum modem power saving
+            - Max Modem: Maximum modem power saving
+
+        config WIFI_POWER_SAVE_MIN_MODEM
+            bool "Min Modem"
+        config WIFI_POWER_SAVE_MAX_MODEM
+            bool "Max Modem"
+    endchoice
+
+    config WIFI_LISTEN_INTERVAL
+        depends on WIFI_POWER_SAVE_MODE
+        int "WiFi listen interval"
+        default 3
+        range 1 100
+        help
+            Interval for station to listen to beacon from AP. The unit of listen interval is one beacon interval.
+            For example, if beacon interval is 100 ms and listen interval is 3, the interval for station to listen
+            to beacon is 300 ms.
+
+    config HTTP_CLIENT_TIMEOUT_MS
+        int "HTTP Client Timeout (ms)"
+        default 5000
+        range 1000 30000
+        help
+            Timeout for HTTP requests to outside sensor in milliseconds.
+
+    config OUTSIDE_SENSOR_URL
+        string "Outside Sensor URL"
+        default "http://192.168.178.59/dht"
+        help
+            URL of the outside sensor HTTP endpoint.
+
+    config SENSOR_UPDATE_INTERVAL_MS
+        int "Sensor Update Interval (ms)"
+        default 10000
+        range 5000 60000
+        help
+            Interval between sensor data updates in milliseconds.
+endmenu
+
+menu "Time Configuration"
+    config TIMEZONE_STRING
+        string "Timezone String"
+        default "CET-1CEST,M3.5.0,M10.5.0/3"
+        help
+            Timezone string in POSIX format. Examples:
+            - "CET-1CEST,M3.5.0,M10.5.0/3" for Central European Time
+            - "EST5EDT,M3.2.0,M11.1.0" for Eastern Time (US)
+            - "PST8PDT,M3.2.0,M11.1.0" for Pacific Time (US)
+            - "JST-9" for Japan Standard Time
+            - "UTC0" for UTC
+
+    choice
+        prompt "Select Common Timezone"
+        default TIMEZONE_CUSTOM
+        help
+            Select a common timezone or choose custom to use the timezone string above.
+
+        config TIMEZONE_CUSTOM
+            bool "Custom (use timezone string above)"
+        config TIMEZONE_UTC
+            bool "UTC (Coordinated Universal Time)"
+        config TIMEZONE_CET
+            bool "CET (Central European Time)"
+        config TIMEZONE_EST
+            bool "EST (Eastern Standard Time - US)"
+        config TIMEZONE_PST
+            bool "PST (Pacific Standard Time - US)"
+        config TIMEZONE_JST
+            bool "JST (Japan Standard Time)"
+        config TIMEZONE_GMT
+            bool "GMT (Greenwich Mean Time)"
+        config TIMEZONE_CST
+            bool "CST (Central Standard Time - US)"
+        config TIMEZONE_MST
+            bool "MST (Mountain Standard Time - US)"
+    endchoice
+
+    config TIMEZONE_POSIX
+        string
+        default TIMEZONE_STRING if TIMEZONE_CUSTOM
+        default "UTC0" if TIMEZONE_UTC
+        default "CET-1CEST,M3.5.0,M10.5.0/3" if TIMEZONE_CET
+        default "EST5EDT,M3.2.0,M11.1.0" if TIMEZONE_EST
+        default "PST8PDT,M3.2.0,M11.1.0" if TIMEZONE_PST
+        default "JST-9" if TIMEZONE_JST
+        default "GMT0" if TIMEZONE_GMT
+        default "CST6CDT,M3.2.0,M11.1.0" if TIMEZONE_CST
+        default "MST7MDT,M3.2.0,M11.1.0" if TIMEZONE_MST
+
+    config NTP_SERVER
+        string "NTP Server"
+        default "pool.ntp.org"
+        help
+            NTP server to synchronize time with.
+
+    config NTP_SERVER_BACKUP
+        string "Backup NTP Server"
+        default "time.nist.gov"
+        help
+            Backup NTP server in case the primary server is unavailable.
 endmenu
