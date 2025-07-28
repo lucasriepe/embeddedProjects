@@ -1,20 +1,20 @@
 # Timezone Configuration Guide
 
-## Verwendung der Timezone-Konfiguration
+## Using the Timezone Configuration
 
-Die neue Timezone-Konfiguration ermöglicht es Ihnen, die Zeitzone über das ESP-IDF Konfigurationssystem (`idf.py menuconfig`) zu konfigurieren.
+The timezone configuration allows you to set the timezone through the ESP-IDF configuration system (`idf.py menuconfig`).
 
-## Konfiguration über menuconfig
+## Configuration via menuconfig
 
-1. Führen Sie `idf.py menuconfig` aus
-2. Navigieren Sie zu "Time Configuration"
-3. Wählen Sie eine der vordefinierten Zeitzonen oder "Custom"
-4. Bei "Custom": Geben Sie Ihren eigenen POSIX Timezone-String ein
-5. Konfigurieren Sie optional die NTP-Server
+1. Run `idf.py menuconfig`
+2. Navigate to "Time Configuration"
+3. Select one of the predefined timezones or "Custom"
+4. For "Custom": Enter your own POSIX timezone string
+5. Optionally configure the NTP servers
 
-## Verfügbare Zeitzonen
+## Available Timezones
 
-### Vordefinierte Optionen:
+### Predefined Options:
 - **UTC**: Coordinated Universal Time (`UTC0`)
 - **CET**: Central European Time (`CET-1CEST,M3.5.0,M10.5.0/3`)
 - **EST**: Eastern Standard Time - US (`EST5EDT,M3.2.0,M11.1.0`)
@@ -29,24 +29,24 @@ Die neue Timezone-Konfiguration ermöglicht es Ihnen, die Zeitzone über das ESP
 std offset [dst [offset] [,start[/time],end[/time]]]
 ```
 
-**Beispiele:**
-- `CET-1CEST,M3.5.0,M10.5.0/3` - Mitteleuropäische Zeit
+**Examples:**
+- `CET-1CEST,M3.5.0,M10.5.0/3` - Central European Time
 - `EST5EDT,M3.2.0,M11.1.0` - US Eastern Time
-- `JST-9` - Japan Standard Time (keine Sommerzeit)
+- `JST-9` - Japan Standard Time (no daylight saving time)
 
-## NTP Server Konfiguration
+## NTP Server Configuration
 
-### Standard NTP Server:
+### Default NTP Servers:
 - **Primary**: `pool.ntp.org`
 - **Backup**: `time.nist.gov`
 
-### Deutsche NTP Server (Beispiel):
+### Regional NTP Servers (Example):
 - **Primary**: `de.pool.ntp.org`
 - **Backup**: `ptbtime1.ptb.de`
 
-## Implementierung im Code
+## Implementation in Code
 
-Der Code verwendet automatisch die konfigurierten Werte:
+The code automatically uses the configured values:
 
 ```c
 // Timezone wird automatisch aus CONFIG_TIMEZONE_POSIX gelesen
