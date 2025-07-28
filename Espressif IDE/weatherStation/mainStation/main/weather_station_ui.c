@@ -130,15 +130,25 @@ static void wifi_init(void)
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
     
     // Configure power save mode if enabled
-    if (CONFIG_WIFI_POWER_SAVE_MODE) {
-        esp_wifi_ps_type_t ps_type = CONFIG_WIFI_POWER_SAVE_MIN_MODEM ? WIFI_PS_MIN_MODEM : WIFI_PS_MAX_MODEM;
-        ESP_ERROR_CHECK(esp_wifi_set_ps(ps_type));
-        ESP_LOGI(TAG, "WiFi power save mode enabled: %s", 
-                 CONFIG_WIFI_POWER_SAVE_MIN_MODEM ? "Min Modem" : "Max Modem");
-    } else {
-        ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
-        ESP_LOGI(TAG, "WiFi power save mode disabled");
-    }
+#ifdef CONFIG_WIFI_POWER_SAVE_MODE
+    wifi_ps_type_t ps_type = WIFI_PS_MIN_MODEM;
+#ifdef CONFIG_WIFI_POWER_SAVE_MAX_MODEM
+    ps_type = WIFI_PS_MAX_MODEM;
+#endif
+    ESP_ERROR_CHECK(esp_wifi_set_ps(ps_type));
+    ESP_LOGI(TAG, "WiFi power save mode enabled: %s", 
+             ps_type == WIFI_PS_MIN_MODEM ? "Min Modem" : "Max Modem");
+    
+    // Set listen interval if power save is enabled
+    wifi_config_t current_config;
+    ESP_ERROR_CHECK(esp_wifi_get_config(WIFI_IF_STA, &current_config));
+    current_config.sta.listen_interval = CONFIG_WIFI_LISTEN_INTERVAL;
+    ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &current_config));
+    ESP_LOGI(TAG, "WiFi listen interval set to: %d", CONFIG_WIFI_LISTEN_INTERVAL);
+#else
+    ESP_ERROR_CHECK(esp_wifi_set_ps(WIFI_PS_NONE));
+    ESP_LOGI(TAG, "WiFi power save mode disabled");
+#endif
     
     ESP_ERROR_CHECK(esp_wifi_start());
 
