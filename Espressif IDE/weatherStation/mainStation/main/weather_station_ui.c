@@ -36,6 +36,7 @@ static lv_obj_t *outside_status_label;  // Status indicator for remote sensor
 static lv_obj_t *inside_box;
 static lv_obj_t *inside_temp_label;
 static lv_obj_t *inside_humidity_label;
+static lv_obj_t *inside_status_label;   // Status indicator for inside sensor
 
 // DHT22 sensor data
 static dht22_data_t current_sensor_data = {0};
@@ -270,6 +271,13 @@ static void create_weather_boxes(void)
     lv_obj_set_style_text_font(inside_humidity_label, &lv_font_montserrat_16, 0);
     lv_obj_set_style_text_color(inside_humidity_label, lv_color_white(), 0);
     lv_obj_align(inside_humidity_label, LV_ALIGN_CENTER, 0, 15);
+
+    // Inside status (DHT22 sensor connection)
+    inside_status_label = lv_label_create(inside_box);
+    lv_label_set_text(inside_status_label, "Initializing...");
+    lv_obj_set_style_text_font(inside_status_label, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_color(inside_status_label, lv_color_hex(0xf39c12), 0);  // Orange color
+    lv_obj_align(inside_status_label, LV_ALIGN_BOTTOM_MID, 0, -10);
 }
 
 // Update sensor display with current DHT22 readings and outside sensor data
@@ -297,6 +305,12 @@ static void update_sensor_display(lv_timer_t *timer)
             lv_label_set_text(inside_humidity_label, humidity_str);
         }
         
+        // Update inside sensor status to show successful reading
+        if (inside_status_label) {
+            lv_label_set_text(inside_status_label, "Connected");
+            lv_obj_set_style_text_color(inside_status_label, lv_color_hex(0x27ae60), 0);  // Green color
+        }
+        
         ESP_LOGI(TAG, "Inside sensor updated: %.1f°C, %.1f%%", 
                  sensor_data.temperature, sensor_data.humidity);
     } else {
@@ -314,6 +328,12 @@ static void update_sensor_display(lv_timer_t *timer)
             if (inside_humidity_label) {
                 lv_label_set_text(inside_humidity_label, humidity_str);
             }
+            
+            // Update status to show using last valid reading
+            if (inside_status_label) {
+                lv_label_set_text(inside_status_label, "Last Reading");
+                lv_obj_set_style_text_color(inside_status_label, lv_color_hex(0xf39c12), 0);  // Orange color
+            }
         } else {
             // Show error state
             if (inside_temp_label) {
@@ -322,6 +342,13 @@ static void update_sensor_display(lv_timer_t *timer)
             if (inside_humidity_label) {
                 lv_label_set_text(inside_humidity_label, "--%");
             }
+            
+            // Update status to show sensor error
+            if (inside_status_label) {
+                lv_label_set_text(inside_status_label, "Sensor Error");
+                lv_obj_set_style_text_color(inside_status_label, lv_color_hex(0xe74c3c), 0);  // Red color
+            }
+            
             ESP_LOGW(TAG, "Failed to read DHT22 sensor: error code %d", ret);
         }
     }

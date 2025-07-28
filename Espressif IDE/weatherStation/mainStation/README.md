@@ -47,6 +47,7 @@ idf.py menuconfig
 Navigate to **Weather Station Configuration** to configure:
 
 #### WiFi Configuration
+
 - WiFi SSID and Password
 - Device Hostname
 - Maximum Retry Attempts
@@ -56,10 +57,12 @@ Navigate to **Weather Station Configuration** to configure:
 - Sensor Update Interval
 
 #### Time Configuration
+
 - Timezone (predefined options or custom POSIX string)
 - NTP Servers (primary and backup)
 
 For detailed configuration instructions, see:
+
 - [WiFi Configuration Guide](WIFI_CONFIG_GUIDE.md)
 - [Timezone Configuration Guide](TIMEZONE_CONFIG_GUIDE.md)
 
@@ -155,6 +158,7 @@ The device supports configurable timezones through the ESP-IDF configuration sys
 For detailed timezone configuration, see [TIMEZONE_CONFIG_GUIDE.md](TIMEZONE_CONFIG_GUIDE.md).
 
 #### Common Timezone Examples:
+
 - **Germany (CET/CEST)**: `CET-1CEST,M3.5.0,M10.5.0/3`
 - **USA East Coast (EST/EDT)**: `EST5EDT,M3.2.0,M11.1.0`
 - **USA West Coast (PST/PDT)**: `PST8PDT,M3.2.0,M11.1.0`
