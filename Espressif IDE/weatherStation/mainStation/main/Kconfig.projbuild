@@ -231,6 +231,40 @@ menu "WiFi Configuration"
             Interval between sensor data updates in milliseconds.
 endmenu
 
+menu "Sensor Offset Configuration"
+    config INSIDE_TEMP_OFFSET
+        float "Inside Temperature Offset (°C)"
+        default 0.0
+        range -10.0 10.0
+        help
+            Offset value for inside temperature sensor in degrees Celsius.
+            Positive values increase the displayed temperature, negative values decrease it.
+
+    config INSIDE_HUMIDITY_OFFSET
+        float "Inside Humidity Offset (%)"
+        default 0.0
+        range -20.0 20.0
+        help
+            Offset value for inside humidity sensor in percent.
+            Positive values increase the displayed humidity, negative values decrease it.
+
+    config OUTSIDE_TEMP_OFFSET
+        float "Outside Temperature Offset (°C)"
+        default 0.0
+        range -10.0 10.0
+        help
+            Offset value for outside temperature sensor in degrees Celsius.
+            Positive values increase the displayed temperature, negative values decrease it.
+
+    config OUTSIDE_HUMIDITY_OFFSET
+        float "Outside Humidity Offset (%)"
+        default 0.0
+        range -20.0 20.0
+        help
+            Offset value for outside humidity sensor in percent.
+            Positive values increase the displayed humidity, negative values decrease it.
+endmenu
+
 menu "Time Configuration"
     config TIMEZONE_STRING
         string "Timezone String"

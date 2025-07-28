@@ -15,6 +15,7 @@
 #include "sys/time.h"
 #include "dht22_sensor.h"  // DHT22 sensor integration
 #include "http_client.h"  // HTTP client for remote sensor data
+#include "sdkconfig.h"    // For Kconfig configuration values
 
 static const char *TAG = "weather_ui";
 
@@ -291,12 +292,16 @@ static void update_sensor_display(lv_timer_t *timer)
         // Update current sensor data
         current_sensor_data = sensor_data;
         
+        // Apply configured offsets to sensor readings
+        float adjusted_temp = sensor_data.temperature + CONFIG_INSIDE_TEMP_OFFSET;
+        float adjusted_humidity = sensor_data.humidity + CONFIG_INSIDE_HUMIDITY_OFFSET;
+        
         // Update inside temperature and humidity labels
         char temp_str[16];
         char humidity_str[16];
         
-        snprintf(temp_str, sizeof(temp_str), "%.1f°C", sensor_data.temperature);
-        snprintf(humidity_str, sizeof(humidity_str), "%.1f%%", sensor_data.humidity);
+        snprintf(temp_str, sizeof(temp_str), "%.1f°C", adjusted_temp);
+        snprintf(humidity_str, sizeof(humidity_str), "%.1f%%", adjusted_humidity);
         
         if (inside_temp_label) {
             lv_label_set_text(inside_temp_label, temp_str);
@@ -311,16 +316,21 @@ static void update_sensor_display(lv_timer_t *timer)
             lv_obj_set_style_text_color(inside_status_label, lv_color_hex(0x27ae60), 0);  // Green color
         }
         
-        ESP_LOGI(TAG, "Inside sensor updated: %.1f°C, %.1f%%", 
-                 sensor_data.temperature, sensor_data.humidity);
+        ESP_LOGI(TAG, "Inside sensor updated: %.1f°C (raw: %.1f°C, offset: %.1f°C), %.1f%% (raw: %.1f%%, offset: %.1f%%)", 
+                 adjusted_temp, sensor_data.temperature, CONFIG_INSIDE_TEMP_OFFSET,
+                 adjusted_humidity, sensor_data.humidity, CONFIG_INSIDE_HUMIDITY_OFFSET);
     } else {
         // Try to use last valid reading
         if (dht22_get_last_reading(&sensor_data) == ESP_OK) {
+            // Apply configured offsets to last valid sensor readings
+            float adjusted_temp = sensor_data.temperature + CONFIG_INSIDE_TEMP_OFFSET;
+            float adjusted_humidity = sensor_data.humidity + CONFIG_INSIDE_HUMIDITY_OFFSET;
+            
             char temp_str[16];
             char humidity_str[16];
             
-            snprintf(temp_str, sizeof(temp_str), "%.1f°C", sensor_data.temperature);
-            snprintf(humidity_str, sizeof(humidity_str), "%.1f%%", sensor_data.humidity);
+            snprintf(temp_str, sizeof(temp_str), "%.1f°C", adjusted_temp);
+            snprintf(humidity_str, sizeof(humidity_str), "%.1f%%", adjusted_humidity);
             
             if (inside_temp_label) {
                 lv_label_set_text(inside_temp_label, temp_str);
@@ -404,12 +414,16 @@ static void update_remote_sensor_status(void)
         lv_label_set_text(outside_status_label, "Connected");
         lv_obj_set_style_text_color(outside_status_label, lv_color_hex(0x27ae60), 0);  // Green color
         
-        // Update temperature and humidity labels with real data
+        // Apply configured offsets to outside sensor readings
+        float adjusted_temp = outside_sensor_data.temperature + CONFIG_OUTSIDE_TEMP_OFFSET;
+        float adjusted_humidity = outside_sensor_data.humidity + CONFIG_OUTSIDE_HUMIDITY_OFFSET;
+        
+        // Update temperature and humidity labels with adjusted data
         char temp_str[16];
         char humidity_str[16];
         
-        snprintf(temp_str, sizeof(temp_str), "%.1f°C", outside_sensor_data.temperature);
-        snprintf(humidity_str, sizeof(humidity_str), "%.1f%%", outside_sensor_data.humidity);
+        snprintf(temp_str, sizeof(temp_str), "%.1f°C", adjusted_temp);
+        snprintf(humidity_str, sizeof(humidity_str), "%.1f%%", adjusted_humidity);
         
         if (outside_temp_label) {
             lv_label_set_text(outside_temp_label, temp_str);
@@ -418,8 +432,10 @@ static void update_remote_sensor_status(void)
             lv_label_set_text(outside_humidity_label, humidity_str);
         }
         
-        ESP_LOGI(TAG, "Outside sensor updated: %s, %.1f°C, %.1f%%", 
-                 outside_sensor_data.sensor_type, outside_sensor_data.temperature, outside_sensor_data.humidity);
+        ESP_LOGI(TAG, "Outside sensor updated: %s, %.1f°C (raw: %.1f°C, offset: %.1f°C), %.1f%% (raw: %.1f%%, offset: %.1f%%)", 
+                 outside_sensor_data.sensor_type, 
+                 adjusted_temp, outside_sensor_data.temperature, CONFIG_OUTSIDE_TEMP_OFFSET,
+                 adjusted_humidity, outside_sensor_data.humidity, CONFIG_OUTSIDE_HUMIDITY_OFFSET);
     } else {
         // Show error state
         lv_label_set_text(outside_status_label, "HTTP Error");
