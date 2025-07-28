@@ -292,9 +292,9 @@ static void update_sensor_display(lv_timer_t *timer)
         // Update current sensor data
         current_sensor_data = sensor_data;
         
-        // Apply configured offsets to sensor readings
-        float adjusted_temp = sensor_data.temperature + CONFIG_INSIDE_TEMP_OFFSET;
-        float adjusted_humidity = sensor_data.humidity + CONFIG_INSIDE_HUMIDITY_OFFSET;
+        // Apply configured offsets to sensor readings (divide by 10 to convert from scaled int to float)
+        float adjusted_temp = sensor_data.temperature + (CONFIG_INSIDE_TEMP_OFFSET / 10.0f);
+        float adjusted_humidity = sensor_data.humidity + (CONFIG_INSIDE_HUMIDITY_OFFSET / 10.0f);
         
         // Update inside temperature and humidity labels
         char temp_str[16];
@@ -317,14 +317,14 @@ static void update_sensor_display(lv_timer_t *timer)
         }
         
         ESP_LOGI(TAG, "Inside sensor updated: %.1f°C (raw: %.1f°C, offset: %.1f°C), %.1f%% (raw: %.1f%%, offset: %.1f%%)", 
-                 adjusted_temp, sensor_data.temperature, CONFIG_INSIDE_TEMP_OFFSET,
-                 adjusted_humidity, sensor_data.humidity, CONFIG_INSIDE_HUMIDITY_OFFSET);
+                 adjusted_temp, sensor_data.temperature, (CONFIG_INSIDE_TEMP_OFFSET / 10.0f),
+                 adjusted_humidity, sensor_data.humidity, (CONFIG_INSIDE_HUMIDITY_OFFSET / 10.0f));
     } else {
         // Try to use last valid reading
         if (dht22_get_last_reading(&sensor_data) == ESP_OK) {
-            // Apply configured offsets to last valid sensor readings
-            float adjusted_temp = sensor_data.temperature + CONFIG_INSIDE_TEMP_OFFSET;
-            float adjusted_humidity = sensor_data.humidity + CONFIG_INSIDE_HUMIDITY_OFFSET;
+            // Apply configured offsets to last valid sensor readings (divide by 10 to convert from scaled int to float)
+            float adjusted_temp = sensor_data.temperature + (CONFIG_INSIDE_TEMP_OFFSET / 10.0f);
+            float adjusted_humidity = sensor_data.humidity + (CONFIG_INSIDE_HUMIDITY_OFFSET / 10.0f);
             
             char temp_str[16];
             char humidity_str[16];
@@ -414,9 +414,9 @@ static void update_remote_sensor_status(void)
         lv_label_set_text(outside_status_label, "Connected");
         lv_obj_set_style_text_color(outside_status_label, lv_color_hex(0x27ae60), 0);  // Green color
         
-        // Apply configured offsets to outside sensor readings
-        float adjusted_temp = outside_sensor_data.temperature + CONFIG_OUTSIDE_TEMP_OFFSET;
-        float adjusted_humidity = outside_sensor_data.humidity + CONFIG_OUTSIDE_HUMIDITY_OFFSET;
+        // Apply configured offsets to outside sensor readings (divide by 10 to convert from scaled int to float)
+        float adjusted_temp = outside_sensor_data.temperature + (CONFIG_OUTSIDE_TEMP_OFFSET / 10.0f);
+        float adjusted_humidity = outside_sensor_data.humidity + (CONFIG_OUTSIDE_HUMIDITY_OFFSET / 10.0f);
         
         // Update temperature and humidity labels with adjusted data
         char temp_str[16];
@@ -434,8 +434,8 @@ static void update_remote_sensor_status(void)
         
         ESP_LOGI(TAG, "Outside sensor updated: %s, %.1f°C (raw: %.1f°C, offset: %.1f°C), %.1f%% (raw: %.1f%%, offset: %.1f%%)", 
                  outside_sensor_data.sensor_type, 
-                 adjusted_temp, outside_sensor_data.temperature, CONFIG_OUTSIDE_TEMP_OFFSET,
-                 adjusted_humidity, outside_sensor_data.humidity, CONFIG_OUTSIDE_HUMIDITY_OFFSET);
+                 adjusted_temp, outside_sensor_data.temperature, (CONFIG_OUTSIDE_TEMP_OFFSET / 10.0f),
+                 adjusted_humidity, outside_sensor_data.humidity, (CONFIG_OUTSIDE_HUMIDITY_OFFSET / 10.0f));
     } else {
         // Show error state
         lv_label_set_text(outside_status_label, "HTTP Error");

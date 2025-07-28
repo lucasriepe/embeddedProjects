@@ -233,35 +233,39 @@ endmenu
 
 menu "Sensor Offset Configuration"
     config INSIDE_TEMP_OFFSET
-        float "Inside Temperature Offset (°C)"
-        default 0.0
-        range -10.0 10.0
+        int "Inside Temperature Offset (°C x10)"
+        default 0
+        range -100 100
         help
-            Offset value for inside temperature sensor in degrees Celsius.
+            Offset value for inside temperature sensor in degrees Celsius multiplied by 10.
+            For example, 5 means +0.5°C, -10 means -1.0°C.
             Positive values increase the displayed temperature, negative values decrease it.
 
     config INSIDE_HUMIDITY_OFFSET
-        float "Inside Humidity Offset (%)"
-        default 0.0
-        range -20.0 20.0
+        int "Inside Humidity Offset (% x10)"
+        default 0
+        range -200 200
         help
-            Offset value for inside humidity sensor in percent.
+            Offset value for inside humidity sensor in percent multiplied by 10.
+            For example, 5 means +0.5%, -10 means -1.0%.
             Positive values increase the displayed humidity, negative values decrease it.
 
     config OUTSIDE_TEMP_OFFSET
-        float "Outside Temperature Offset (°C)"
-        default 0.0
-        range -10.0 10.0
+        int "Outside Temperature Offset (°C x10)"
+        default 0
+        range -100 100
         help
-            Offset value for outside temperature sensor in degrees Celsius.
+            Offset value for outside temperature sensor in degrees Celsius multiplied by 10.
+            For example, 5 means +0.5°C, -10 means -1.0°C.
             Positive values increase the displayed temperature, negative values decrease it.
 
     config OUTSIDE_HUMIDITY_OFFSET
-        float "Outside Humidity Offset (%)"
-        default 0.0
-        range -20.0 20.0
+        int "Outside Humidity Offset (% x10)"
+        default 0
+        range -200 200
         help
-            Offset value for outside humidity sensor in percent.
+            Offset value for outside humidity sensor in percent multiplied by 10.
+            For example, 5 means +0.5%, -10 means -1.0%.
             Positive values increase the displayed humidity, negative values decrease it.
 endmenu
 
