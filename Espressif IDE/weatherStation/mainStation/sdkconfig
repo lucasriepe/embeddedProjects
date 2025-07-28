@@ -586,6 +586,13 @@ CONFIG_EXAMPLE_LVGL_PORT_ROTATION_DEGREE=0
 # end of Example Configuration
 
 #
+# WiFi Configuration
+#
+CONFIG_WIFI_SSID="myssid"
+CONFIG_WIFI_PASSWORD="mypassword"
+# end of WiFi Configuration
+
+#
 # Compiler options
 #
 CONFIG_COMPILER_OPTIMIZATION_DEBUG=y

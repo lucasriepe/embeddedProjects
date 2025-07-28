@@ -1,7 +1,7 @@
 idf_component_register(
-    SRCS "waveshare_rgb_lcd_port.c" "main.c" "lvgl_port.c" "weather_station_ui.c" "dht22_sensor.c"
+    SRCS "waveshare_rgb_lcd_port.c" "main.c" "lvgl_port.c" "weather_station_ui.c" "dht22_sensor.c" "http_client.c"
     INCLUDE_DIRS "."
-    REQUIRES lvgl esp_wifi nvs_flash esp_netif esp_event driver)
+    REQUIRES lvgl esp_wifi nvs_flash esp_netif esp_event driver esp_http_client json)
 
 idf_component_get_property(lvgl_lib lvgl__lvgl COMPONENT_LIB)
 target_compile_options(${lvgl_lib} PRIVATE -Wno-format)

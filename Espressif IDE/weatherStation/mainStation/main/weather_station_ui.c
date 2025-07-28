@@ -15,8 +15,12 @@
 #include "sys/time.h"
 #include "wifi_config.h"  // Generated from .env file
 #include "dht22_sensor.h"  // DHT22 sensor integration
+#include "http_client.h"  // HTTP client for remote sensor data
 
 static const char *TAG = "weather_ui";
+
+// URL for outside sensor data
+#define OUTSIDE_SENSOR_URL "http://192.168.178.47/dht"
 
 // Global variables
 static lv_obj_t *main_screen;
@@ -36,6 +40,7 @@ static lv_obj_t *inside_humidity_label;
 
 // DHT22 sensor data
 static dht22_data_t current_sensor_data = {0};
+static outside_sensor_data_t outside_sensor_data = {0};
 
 // Function declarations
 static void wifi_init(void);
@@ -217,9 +222,10 @@ static void create_weather_boxes(void)
     lv_obj_align(inside_humidity_label, LV_ALIGN_CENTER, 0, 15);
 }
 
-// Update sensor display
+// Update sensor display with current DHT22 readings and outside sensor data
 static void update_sensor_display(lv_timer_t *timer)
 {
+    // Update inside sensor (DHT22)
     dht22_data_t sensor_data;
     esp_err_t ret = dht22_read(&sensor_data);
     
@@ -240,6 +246,9 @@ static void update_sensor_display(lv_timer_t *timer)
         if (inside_humidity_label) {
             lv_label_set_text(inside_humidity_label, humidity_str);
         }
+        
+        ESP_LOGI(TAG, "Inside sensor updated: %.1f°C, %.1f%%", 
+                 sensor_data.temperature, sensor_data.humidity);
     } else {
         // Try to use last valid reading
         if (dht22_get_last_reading(&sensor_data) == ESP_OK) {
@@ -267,7 +276,7 @@ static void update_sensor_display(lv_timer_t *timer)
         }
     }
     
-    // Update remote sensor status
+    // Update outside sensor data via HTTP
     update_remote_sensor_status();
 }
 
@@ -289,23 +298,64 @@ static void update_time_display(lv_timer_t *timer)
     }
 }
 
-// Update remote sensor status - now shows "HTTP Server" as placeholder
+// Update remote sensor status - now fetches data from HTTP server
 static void update_remote_sensor_status(void)
 {
     if (!outside_status_label) {
         return;
     }
     
-    // For now, show that we're waiting for HTTP server implementation
-    lv_label_set_text(outside_status_label, "HTTP Server");
-    lv_obj_set_style_text_color(outside_status_label, lv_color_hex(0x3498db), 0);  // Blue color
-    
-    // Set placeholder values for outside sensor
-    if (outside_temp_label) {
-        lv_label_set_text(outside_temp_label, "--°C");
+    // Only try to fetch data if WiFi is connected
+    if (!wifi_connected) {
+        lv_label_set_text(outside_status_label, "No WiFi");
+        lv_obj_set_style_text_color(outside_status_label, lv_color_hex(0xe74c3c), 0);  // Red color
+        
+        if (outside_temp_label) {
+            lv_label_set_text(outside_temp_label, "--°C");
+        }
+        if (outside_humidity_label) {
+            lv_label_set_text(outside_humidity_label, "--%");
+        }
+        return;
     }
-    if (outside_humidity_label) {
-        lv_label_set_text(outside_humidity_label, "--%");
+    
+    // Fetch sensor data from HTTP server
+    esp_err_t ret = http_client_fetch_sensor_data(OUTSIDE_SENSOR_URL, &outside_sensor_data);
+    
+    if (ret == ESP_OK && outside_sensor_data.valid) {
+        // Update status to show successful connection
+        lv_label_set_text(outside_status_label, "Connected");
+        lv_obj_set_style_text_color(outside_status_label, lv_color_hex(0x27ae60), 0);  // Green color
+        
+        // Update temperature and humidity labels with real data
+        char temp_str[16];
+        char humidity_str[16];
+        
+        snprintf(temp_str, sizeof(temp_str), "%.1f°C", outside_sensor_data.temperature);
+        snprintf(humidity_str, sizeof(humidity_str), "%.1f%%", outside_sensor_data.humidity);
+        
+        if (outside_temp_label) {
+            lv_label_set_text(outside_temp_label, temp_str);
+        }
+        if (outside_humidity_label) {
+            lv_label_set_text(outside_humidity_label, humidity_str);
+        }
+        
+        ESP_LOGI(TAG, "Outside sensor updated: %s, %.1f°C, %.1f%%", 
+                 outside_sensor_data.sensor_type, outside_sensor_data.temperature, outside_sensor_data.humidity);
+    } else {
+        // Show error state
+        lv_label_set_text(outside_status_label, "HTTP Error");
+        lv_obj_set_style_text_color(outside_status_label, lv_color_hex(0xe74c3c), 0);  // Red color
+        
+        if (outside_temp_label) {
+            lv_label_set_text(outside_temp_label, "--°C");
+        }
+        if (outside_humidity_label) {
+            lv_label_set_text(outside_humidity_label, "--%");
+        }
+        
+        ESP_LOGW(TAG, "Failed to fetch outside sensor data");
     }
 }
 
@@ -354,11 +404,42 @@ void weather_station_ui_init(void)
     // Initialize WiFi and start connection
     wifi_init();
     
+    // Initialize HTTP client for outside sensor data
+    ESP_LOGI(TAG, "Initializing HTTP client for outside sensor");
+    esp_err_t http_ret = http_client_init();
+    if (http_ret != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to initialize HTTP client: %s", esp_err_to_name(http_ret));
+    } else {
+        ESP_LOGI(TAG, "HTTP client initialized successfully");
+    }
+    
     // Start time update timer (update every second)
     time_timer = lv_timer_create(update_time_display, 1000, NULL);
     
-    // Start sensor update timer (update every 5 seconds)
-    sensor_timer = lv_timer_create(update_sensor_display, 5000, NULL);
+    // Start sensor update timer (update every 10 seconds for both inside and outside sensors)
+    sensor_timer = lv_timer_create(update_sensor_display, 10000, NULL);
     
-    ESP_LOGI(TAG, "Weather Station UI initialized successfully");
+    // Initial sensor reading
+    update_sensor_display(NULL);
+    
+    ESP_LOGI(TAG, "Weather station UI initialized successfully");
+}
+
+// Cleanup function for weather station UI
+void weather_station_ui_cleanup(void)
+{
+    // Stop timers
+    if (time_timer) {
+        lv_timer_del(time_timer);
+        time_timer = NULL;
+    }
+    if (sensor_timer) {
+        lv_timer_del(sensor_timer);
+        sensor_timer = NULL;
+    }
+    
+    // Cleanup HTTP client
+    http_client_deinit();
+    
+    ESP_LOGI(TAG, "Weather station UI cleanup completed");
 }

@@ -12,4 +12,10 @@
  */
 void weather_station_ui_init(void);
 
+/**
+ * Cleanup the weather station UI
+ * Stops timers and cleans up HTTP client resources
+ */
+void weather_station_ui_cleanup(void);
+
 #endif // WEATHER_STATION_UI_H
