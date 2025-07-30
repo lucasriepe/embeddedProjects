@@ -11,8 +11,8 @@
 DHT dht(DHTPIN, DHTTYPE);
 
 #ifndef STASSID
-#define STASSID "FRITZ!Box 7590 NM"
-#define STAPSK "95065973249267578128"
+#define STASSID "Your_WiFi_Network_Name"
+#define STAPSK "Your_WiFi_Password"
 #endif
 
 const char* ssid = STASSID;
